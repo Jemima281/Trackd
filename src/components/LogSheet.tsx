@@ -13,6 +13,7 @@ import {
   type Status,
 } from "@/lib/entries";
 import type { MediaResult } from "@/lib/search";
+import { UNIT_NAMES, xpFor } from "@/lib/xp";
 
 // Pop-up for adding an item to your Dex or changing how it's logged.
 export default function LogSheet({
@@ -31,8 +32,39 @@ export default function LogSheet({
   const { user } = useAuth();
   const [status, setStatus] = useState<Status | null>(entry?.status ?? null);
   const [rating, setRating] = useState<number | null>(entry?.rating ?? null);
+  const [progress, setProgress] = useState<number>(entry?.progress ?? 0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Movies, TV and albums don't include their length in search results, so
+  // fetch it when the sheet opens.
+  const [length, setLength] = useState<Pick<MediaResult, "totalUnits" | "unitMinutes">>({
+    totalUnits: media.totalUnits,
+    unitMinutes: media.unitMinutes,
+  });
+  const needsLength = length.unitMinutes === undefined;
+  useEffect(() => {
+    if (!needsLength) return;
+    let cancelled = false;
+    fetch(`/api/details?key=${encodeURIComponent(media.key)}`)
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((found) => !cancelled && setLength(found))
+      .catch(() => !cancelled && setLength({ totalUnits: null, unitMinutes: null }));
+    return () => {
+      cancelled = true;
+    };
+  }, [needsLength, media.key]);
+
+  const total = length.totalUnits ?? null;
+  const isMovie = media.type === "movie";
+  const xp = status ? xpFor(status, progress, length.unitMinutes ?? null) : 0;
+
+  function pickStatus(s: Status) {
+    setStatus(s);
+    // Finishing something means you got through all of it.
+    if (s === "completed" && total) setProgress(total);
+    else if (isMovie) setProgress(s === "completed" ? 1 : 0);
+  }
 
   // Close on Escape.
   useEffect(() => {
@@ -46,7 +78,16 @@ export default function LogSheet({
     setBusy(true);
     setError(null);
     try {
-      onSaved(await saveEntry(user.id, media, status, rating, entry));
+      onSaved(
+        await saveEntry(
+          user.id,
+          { ...media, totalUnits: total, unitMinutes: length.unitMinutes ?? null },
+          status,
+          rating,
+          progress,
+          entry,
+        ),
+      );
       onClose();
     } catch {
       setError("Couldn't save. Try again in a moment.");
@@ -115,7 +156,7 @@ export default function LogSheet({
               {STATUSES.map((s) => (
                 <button
                   key={s}
-                  onClick={() => setStatus(s)}
+                  onClick={() => pickStatus(s)}
                   className={`rounded-xl border px-4 py-3 text-sm font-semibold transition ${
                     status === s
                       ? STATUS_STYLES[s].button
@@ -126,6 +167,29 @@ export default function LogSheet({
                 </button>
               ))}
             </div>
+
+            {!isMovie && (
+              <label className="flex items-center justify-between gap-3 text-sm font-medium text-white/70">
+                <span className="first-letter:uppercase">{UNIT_NAMES[media.type]} done</span>
+                <span className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    max={total ?? 20000}
+                    value={progress}
+                    onChange={(e) => {
+                      const n = Math.max(0, Math.floor(Number(e.target.value) || 0));
+                      setProgress(Math.min(n, total ?? 20000));
+                    }}
+                    className="w-20 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-right text-base text-white outline-none focus:border-amber-400"
+                  />
+                  <span className="w-14 text-white/40">
+                    {needsLength ? "of …" : total ? `of ${total}` : "of ?"}
+                  </span>
+                </span>
+              </label>
+            )}
 
             <div className="flex flex-col gap-2">
               <p className="text-sm font-medium text-white/70">
@@ -152,9 +216,17 @@ export default function LogSheet({
             {error && <p className="text-sm text-red-300">{error}</p>}
 
             <div className="flex flex-col gap-2">
+              {status && (
+                <p className="text-center text-sm text-white/60">
+                  Worth{" "}
+                  <span className="font-black text-amber-400">
+                    {needsLength ? "…" : xp.toLocaleString()} XP
+                  </span>
+                </p>
+              )}
               <button
                 onClick={save}
-                disabled={!status || busy}
+                disabled={!status || busy || needsLength}
                 className="rounded-full bg-amber-400 px-6 py-3 font-bold text-black transition hover:bg-amber-300 disabled:opacity-40"
               >
                 {busy ? "Saving…" : entry ? "Save changes" : "Add to Dex"}

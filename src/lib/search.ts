@@ -11,6 +11,10 @@ export type MediaResult = {
   year: number | null;
   cover: string | null;
   details: string | null; // e.g. "TV · 24 episodes"
+  // Length, used for XP. Undefined means "not looked up yet" (see /api/details);
+  // null means the source doesn't know (e.g. an ongoing manga).
+  totalUnits?: number | null; // episodes, chapters, tracks, or 1 for a movie
+  unitMinutes?: number | null; // average minutes per episode/chapter/track
 };
 
 const ANILIST_QUERY = `
@@ -20,6 +24,8 @@ query ($search: String, $type: MediaType) {
       id
       format
       episodes
+      duration
+      nextAiringEpisode { episode }
       chapters
       volumes
       title { romaji english }
@@ -33,6 +39,8 @@ type AniListMedia = {
   id: number;
   format: string | null;
   episodes: number | null;
+  duration: number | null;
+  nextAiringEpisode: { episode: number } | null;
   chapters: number | null;
   volumes: number | null;
   title: { romaji: string | null; english: string | null };
@@ -52,6 +60,8 @@ const FORMAT_LABELS: Record<string, string> = {
   NOVEL: "Light novel",
   ONE_SHOT: "One-shot",
 };
+
+export const MANGA_MINUTES_PER_CHAPTER = 5;
 
 function plural(n: number, word: string) {
   return `${n} ${word}${n === 1 ? "" : "s"}`;
@@ -82,8 +92,15 @@ async function searchAniList(query: string, type: "anime" | "manga") {
     const details = [m.format && FORMAT_LABELS[m.format], count]
       .filter(Boolean)
       .join(" · ");
+    // Ongoing anime have no final episode count; use the episodes aired so far.
+    const totalUnits =
+      type === "anime"
+        ? (m.episodes ?? (m.nextAiringEpisode ? m.nextAiringEpisode.episode - 1 : null))
+        : (m.chapters ?? (m.format === "ONE_SHOT" ? 1 : null));
     return {
       key: `anilist:${m.id}`,
+      totalUnits,
+      unitMinutes: type === "anime" ? (m.duration ?? 24) : MANGA_MINUTES_PER_CHAPTER,
       type,
       title,
       subtitle: alt,

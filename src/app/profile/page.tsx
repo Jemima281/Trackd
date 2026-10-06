@@ -2,13 +2,24 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import Avatar from "@/components/Avatar";
+import { listEntries } from "@/lib/entries";
 import { createClient } from "@/lib/supabase/client";
+import { totals } from "@/lib/xp";
 
 export default function ProfilePage() {
   const router = useRouter();
   const { user, profile, loading } = useAuth();
+  const [stats, setStats] = useState<{ xp: number; hours: number } | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    listEntries(user.id)
+      .then((entries) => setStats(totals(entries)))
+      .catch(() => {});
+  }, [user]);
 
   if (loading) {
     return <p className="py-24 text-center text-white/50">Loading…</p>;
@@ -45,9 +56,18 @@ export default function ProfilePage() {
       <Avatar username={profile?.username ?? user.email ?? "?"} size="lg" />
       <h1 className="text-3xl font-black">@{profile?.username ?? "unknown"}</h1>
       {joined && <p className="text-white/50">Collecting since {joined}</p>}
-      <span className="rounded-full border border-amber-700/60 bg-amber-900/30 px-4 py-1 text-sm font-semibold text-amber-500">
-        Unranked · 0 XP
-      </span>
+      <div className="mt-2 flex gap-8">
+        <div>
+          <p className="text-3xl font-black text-amber-400">
+            {stats ? stats.xp.toLocaleString() : "…"}
+          </p>
+          <p className="text-xs uppercase tracking-wide text-white/50">XP</p>
+        </div>
+        <div>
+          <p className="text-3xl font-black">{stats ? stats.hours.toLocaleString() : "…"}</p>
+          <p className="text-xs uppercase tracking-wide text-white/50">Hours</p>
+        </div>
+      </div>
       <button
         onClick={signOut}
         className="mt-6 rounded-full border border-white/15 px-5 py-2 text-sm text-white/70 hover:bg-white/10"

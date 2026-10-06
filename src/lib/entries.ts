@@ -18,6 +18,10 @@ export type Entry = {
   status: Status;
   rating: number | null;
   completed_at: string | null;
+  progress: number;
+  total_units: number | null;
+  unit_minutes: number | null;
+  xp: number;
   created_at: string;
   updated_at: string;
 };
@@ -59,6 +63,10 @@ export function entryToMedia(e: Entry): MediaResult {
     year: e.year,
     cover: e.cover,
     details: e.details,
+    // Entries logged before XP existed have no length yet; undefined makes the
+    // log sheet look it up.
+    totalUnits: e.unit_minutes === null ? undefined : e.total_units,
+    unitMinutes: e.unit_minutes ?? undefined,
   };
 }
 
@@ -89,6 +97,7 @@ export async function saveEntry(
   media: MediaResult,
   status: Status,
   rating: number | null,
+  progress: number,
   previous: Entry | null,
 ) {
   // Stamp the completion date the first time something is completed.
@@ -111,6 +120,9 @@ export async function saveEntry(
         details: media.details,
         status,
         rating,
+        progress,
+        total_units: media.totalUnits ?? null,
+        unit_minutes: media.unitMinutes ?? null,
         completed_at: completedAt,
         updated_at: new Date().toISOString(),
       },

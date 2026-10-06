@@ -14,6 +14,7 @@ import {
   type Status,
 } from "@/lib/entries";
 import type { MediaType } from "@/lib/search";
+import { totals } from "@/lib/xp";
 
 const TYPES: { type: MediaType | "all"; label: string }[] = [
   { type: "all", label: "All" },
@@ -94,6 +95,7 @@ export default function DexPage() {
   const ofType = entries.filter((e) => type === "all" || e.media_type === type);
   const shown = ofType.filter((e) => status === "all" || e.status === status);
   const completed = entries.filter((e) => e.status === "completed").length;
+  const { xp } = totals(entries);
   // "Watching" only makes sense as a filter label when one type is picked.
   const labelType: MediaType = type === "all" ? "anime" : type;
 
@@ -101,10 +103,16 @@ export default function DexPage() {
     <div className="flex flex-col gap-6 py-8">
       <div className="flex items-end justify-between gap-4">
         <h1 className="text-4xl font-black">Your Dex</h1>
-        <p className="text-right text-sm text-white/50">
-          <span className="text-2xl font-black text-emerald-400">{completed}</span>{" "}
-          completed
-        </p>
+        <div className="flex gap-4 text-right text-sm text-white/50">
+          <p>
+            <span className="text-2xl font-black text-emerald-400">{completed}</span>{" "}
+            done
+          </p>
+          <p>
+            <span className="text-2xl font-black text-amber-400">{xp.toLocaleString()}</span>{" "}
+            XP
+          </p>
+        </div>
       </div>
 
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4">
