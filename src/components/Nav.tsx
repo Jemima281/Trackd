@@ -7,6 +7,7 @@ import Avatar from "@/components/Avatar";
 
 const links = [
   { href: "/", label: "Home", icon: "⌂" },
+  { href: "/search", label: "Search", icon: "⌕" },
   { href: "/dex", label: "Dex", icon: "◫" },
   { href: "/ranks", label: "Ranks", icon: "▲" },
   { href: "/friends", label: "Friends", icon: "☺" },
@@ -57,7 +58,7 @@ export default function Nav() {
       </header>
 
       {/* Bottom tab bar (phones) */}
-      <nav className="fixed inset-x-0 bottom-0 z-10 grid grid-cols-4 border-t border-white/10 bg-background/90 backdrop-blur sm:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-10 grid grid-cols-5 border-t border-white/10 bg-background/90 backdrop-blur sm:hidden">
         {links.map((l) => (
           <Link
             key={l.href}
