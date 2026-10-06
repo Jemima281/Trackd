@@ -7,6 +7,7 @@ import Avatar from "@/components/Avatar";
 import DexBrowser from "@/components/DexBrowser";
 import RankOverview from "@/components/RankOverview";
 import { listEntries, type Entry } from "@/lib/entries";
+import { getStats, type XpByType } from "@/lib/stats";
 import {
   acceptRequest,
   getProfileByUsername,
@@ -16,7 +17,11 @@ import {
   type Relation,
 } from "@/lib/friends";
 
-type Loaded = { profile: Profile; entries: Entry[] } | "missing" | "error" | null;
+type Loaded =
+  | { profile: Profile; entries: Entry[]; byType: XpByType }
+  | "missing"
+  | "error"
+  | null;
 
 // Anyone's public profile: rank, category ranks and their Dex.
 export default function UserProfile({ params }: { params: Promise<{ username: string }> }) {
@@ -33,8 +38,11 @@ export default function UserProfile({ params }: { params: Promise<{ username: st
       try {
         const profile = await getProfileByUsername(decodeURIComponent(username));
         if (!profile) return !cancelled && setData("missing");
-        const entries = await listEntries(profile.id);
-        if (!cancelled) setData({ profile, entries });
+        const [entries, stats] = await Promise.all([
+          listEntries(profile.id),
+          getStats(profile.id),
+        ]);
+        if (!cancelled) setData({ profile, entries, byType: stats.byType });
       } catch {
         if (!cancelled) setData("error");
       }
@@ -101,7 +109,7 @@ export default function UserProfile({ params }: { params: Promise<{ username: st
     );
   }
 
-  const { profile, entries } = data;
+  const { profile, entries, byType } = data;
   const isMe = user?.id === profile.id;
   const pill =
     "rounded-full px-5 py-2 text-sm font-bold transition disabled:opacity-50";
@@ -155,7 +163,7 @@ export default function UserProfile({ params }: { params: Promise<{ username: st
   return (
     <div className="flex flex-col gap-8 py-8">
       <RankOverview
-        entries={entries}
+        byType={byType}
         title="Rank"
         header={
           <>

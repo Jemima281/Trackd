@@ -1,9 +1,8 @@
 import RankBadge from "@/components/RankBadge";
 import RankProgress from "@/components/RankProgress";
-import type { Entry } from "@/lib/entries";
 import { CATEGORY_SCALE, rankFor, TIER_STYLES } from "@/lib/ranks";
 import type { MediaType } from "@/lib/search";
-import { totals } from "@/lib/xp";
+import type { XpByType } from "@/lib/stats";
 
 const CATEGORIES: { type: MediaType; label: string; icon: string }[] = [
   { type: "anime", label: "Anime", icon: "🌸" },
@@ -13,17 +12,17 @@ const CATEGORIES: { type: MediaType; label: string; icon: string }[] = [
   { type: "album", label: "Music", icon: "💿" },
 ];
 
-// Overall rank card plus one card per category, for any user's entries.
+// Overall rank card plus one card per category, for any user.
 export default function RankOverview({
-  entries,
+  byType,
   title = "Overall rank",
   header,
 }: {
-  entries: Entry[];
+  byType: XpByType;
   title?: string;
   header?: React.ReactNode; // shown above the badge, e.g. an avatar
 }) {
-  const { xp } = totals(entries);
+  const xp = Object.values(byType).reduce((a, b) => a + b, 0);
   const rank = rankFor(xp);
 
   return (
@@ -43,10 +42,7 @@ export default function RankOverview({
         <h2 className="text-xl font-black">By category</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           {CATEGORIES.map((c) => {
-            const r = rankFor(
-              totals(entries.filter((e) => e.media_type === c.type)).xp,
-              CATEGORY_SCALE[c.type],
-            );
+            const r = rankFor(byType[c.type], CATEGORY_SCALE[c.type]);
             return (
               <div
                 key={c.type}

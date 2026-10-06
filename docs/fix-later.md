@@ -3,6 +3,6 @@
 Things to come back to once the main features are in.
 
 - [ ] Logging sheet feels awkward and looks ugly — redesign it.
-- [ ] XP totals are added up in the browser from every entry row; Supabase
-      returns at most 1000 rows per request, so very big Dexes will under-count.
-      Move totals into a database view/function (do this with the leaderboard).
+- [x] ~~XP totals under-count for Dexes over 1000 entries~~ — totals now come
+      from the `xp_by_type` database function.
+- [ ] The Dex grid itself still loads at most 1000 entries; add paging.

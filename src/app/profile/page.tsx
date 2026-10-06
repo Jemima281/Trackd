@@ -7,9 +7,8 @@ import { useAuth } from "@/components/AuthProvider";
 import Avatar from "@/components/Avatar";
 import RankBadge from "@/components/RankBadge";
 import { rankFor, TIER_STYLES } from "@/lib/ranks";
-import { listEntries } from "@/lib/entries";
 import { createClient } from "@/lib/supabase/client";
-import { totals } from "@/lib/xp";
+import { getStats } from "@/lib/stats";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -18,8 +17,8 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!user) return;
-    listEntries(user.id)
-      .then((entries) => setStats(totals(entries)))
+    getStats(user.id)
+      .then(setStats)
       .catch(() => {});
   }, [user]);
 

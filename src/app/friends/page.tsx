@@ -11,10 +11,41 @@ import {
   listConnections,
   removeConnection,
   sendRequest,
-  xpByUser,
   type Connection,
 } from "@/lib/friends";
-import { rankFor, TIER_STYLES } from "@/lib/ranks";
+import { CATEGORY_SCALE, rankFor } from "@/lib/ranks";
+import type { MediaType } from "@/lib/search";
+import { getLeaderboard, type LeaderboardRow, type Period } from "@/lib/stats";
+
+const CATEGORIES: { type: MediaType | null; label: string }[] = [
+  { type: null, label: "Everything" },
+  { type: "anime", label: "Anime" },
+  { type: "manga", label: "Manga" },
+  { type: "movie", label: "Movies" },
+  { type: "tv", label: "TV" },
+  { type: "album", label: "Music" },
+];
+
+function Toggle({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition ${
+        active ? "bg-amber-400 text-black" : "border border-white/15 text-white/70 hover:bg-white/10"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
 
 function SmallButton({
   onClick,
@@ -54,10 +85,64 @@ function PersonRow({ profile, children }: { profile: Profile; children?: React.R
   );
 }
 
+const MEDALS = ["🥇", "🥈", "🥉"];
+
+function LeaderboardItem({
+  place,
+  row,
+  isMe,
+  scale,
+  busy,
+  onRemove,
+}: {
+  place: number;
+  row: LeaderboardRow;
+  isMe: boolean;
+  scale: number | null; // null hides the rank badge
+  busy: boolean;
+  onRemove?: () => void;
+}) {
+  return (
+    <div
+      className={`flex items-center gap-3 rounded-2xl border px-4 py-3 ${
+        isMe ? "border-amber-400/40 bg-amber-400/[0.06]" : "border-white/10 bg-white/[0.03]"
+      }`}
+    >
+      {row.xp > 0 && place <= 3 ? (
+        <span className="w-6 text-center text-xl">{MEDALS[place - 1]}</span>
+      ) : (
+        <span className="w-6 text-center font-black text-white/40">{place}</span>
+      )}
+      <Link href={`/u/${row.username}`} className="flex min-w-0 flex-1 items-center gap-3">
+        <Avatar username={row.username} />
+        <div className="min-w-0">
+          <p className="truncate font-semibold hover:underline">
+            @{row.username} {isMe && <span className="text-white/40">(you)</span>}
+          </p>
+          <p className="text-xs font-bold text-amber-400">{row.xp.toLocaleString()} XP</p>
+        </div>
+      </Link>
+      {scale !== null && <RankBadge rank={rankFor(row.xp, scale)} size="sm" />}
+      {onRemove && (
+        <button
+          title="Remove friend"
+          disabled={busy}
+          onClick={onRemove}
+          className="px-1 text-white/30 hover:text-red-300"
+        >
+          ✕
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function FriendsPage() {
-  const { user, profile, loading } = useAuth();
+  const { user, loading } = useAuth();
   const [connections, setConnections] = useState<Connection[] | null>(null);
-  const [xp, setXp] = useState<Record<string, number>>({});
+  const [period, setPeriod] = useState<Period>("week");
+  const [category, setCategory] = useState<MediaType | null>(null);
+  const [board, setBoard] = useState<LeaderboardRow[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -67,10 +152,7 @@ export default function FriendsPage() {
   const reload = useCallback(async () => {
     if (!user) return;
     try {
-      const list = await listConnections(user.id);
-      const friendIds = list.filter((c) => c.relation === "friends").map((c) => c.profile.id);
-      setXp(await xpByUser([user.id, ...friendIds]));
-      setConnections(list);
+      setConnections(await listConnections(user.id));
     } catch {
       setFailed(true);
     }
@@ -80,6 +162,18 @@ export default function FriendsPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- loads data from Supabase
     reload();
   }, [reload]);
+
+  // Reload the leaderboard when the filters or friends list change.
+  useEffect(() => {
+    if (!user || !connections) return;
+    let cancelled = false;
+    getLeaderboard(period, category)
+      .then((rows) => !cancelled && setBoard(rows))
+      .catch(() => !cancelled && setFailed(true));
+    return () => {
+      cancelled = true;
+    };
+  }, [user, connections, period, category]);
 
   // Search usernames as you type.
   useEffect(() => {
@@ -139,11 +233,8 @@ export default function FriendsPage() {
   const sent = connections.filter((c) => c.relation === "sent");
   const friends = connections.filter((c) => c.relation === "friends");
 
-  // You plus your friends, highest XP first.
-  const board = [
-    ...(profile ? [{ profile, isMe: true }] : []),
-    ...friends.map((f) => ({ profile: f.profile, isMe: false })),
-  ].sort((a, b) => (xp[b.profile.id] ?? 0) - (xp[a.profile.id] ?? 0));
+  // Badges show all-time rank (in the chosen category); weekly XP isn't a rank.
+  const scale = category ? CATEGORY_SCALE[category] : 1;
 
   const searching = query.trim().replace(/^@/, "").length >= 2;
 
@@ -218,50 +309,63 @@ export default function FriendsPage() {
       )}
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-xl font-black">Your friends</h2>
-        {friends.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-white/15 px-4 py-8 text-center text-white/50">
-            No friends yet. Search for someone&apos;s @username above to add them.
-          </p>
-        ) : (
-          board.map(({ profile: p, isMe }, i) => {
-            const rank = rankFor(xp[p.id] ?? 0);
-            return (
-              <div
-                key={p.id}
-                className={`flex items-center gap-3 rounded-2xl border px-4 py-3 ${
-                  isMe ? "border-amber-400/40 bg-amber-400/[0.06]" : "border-white/10 bg-white/[0.03]"
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-xl font-black">Leaderboard</h2>
+          <div className="flex gap-1 rounded-full border border-white/10 p-1">
+            {(["week", "all"] as const).map((p) => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                className={`rounded-full px-3 py-1 text-xs font-bold transition ${
+                  period === p ? "bg-white text-black" : "text-white/60 hover:text-white"
                 }`}
               >
-                <span className="w-5 text-center font-black text-white/40">{i + 1}</span>
-                <Link href={`/u/${p.username}`} className="flex min-w-0 flex-1 items-center gap-3">
-                  <Avatar username={p.username} />
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold hover:underline">
-                      @{p.username} {isMe && <span className="text-white/40">(you)</span>}
-                    </p>
-                    <p className={`text-xs font-bold ${TIER_STYLES[rank.tier].text}`}>
-                      {rank.name} · {(xp[p.id] ?? 0).toLocaleString()} XP
-                    </p>
-                  </div>
-                </Link>
-                <RankBadge rank={rank} size="sm" />
-                {!isMe && (
-                  <button
-                    title="Remove friend"
-                    disabled={busyId === p.id}
-                    onClick={() =>
-                      confirm(`Remove @${p.username} from your friends?`) &&
-                      act(p.id, () => removeConnection(p.id, user.id))
-                    }
-                    className="px-1 text-white/30 hover:text-red-300"
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
+                {p === "week" ? "This week" : "All time"}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="-mx-4 flex gap-2 overflow-x-auto px-4">
+          {CATEGORIES.map((c) => (
+            <Toggle key={c.label} active={category === c.type} onClick={() => setCategory(c.type)}>
+              {c.label}
+            </Toggle>
+          ))}
+        </div>
+        {period === "week" && (
+          <p className="text-xs text-white/40">XP earned since Monday. Resets every week.</p>
+        )}
+
+        {!board ? (
+          <p className="py-8 text-center text-white/50">Loading…</p>
+        ) : (
+          board.map((row, i) => {
+            const isMe = row.user_id === user.id;
+            const friend = friends.find((f) => f.profile.id === row.user_id);
+            return (
+              <LeaderboardItem
+                key={row.user_id}
+                place={i + 1}
+                row={row}
+                isMe={isMe}
+                scale={period === "all" ? scale : null}
+                busy={busyId === row.user_id}
+                onRemove={
+                  friend
+                    ? () =>
+                        confirm(`Remove @${row.username} from your friends?`) &&
+                        act(row.user_id, () => removeConnection(row.user_id, user.id))
+                    : undefined
+                }
+              />
             );
           })
+        )}
+
+        {friends.length === 0 && (
+          <p className="rounded-2xl border border-dashed border-white/15 px-4 py-8 text-center text-white/50">
+            It&apos;s lonely up here. Search for someone&apos;s @username above to add them.
+          </p>
         )}
       </section>
 

@@ -4,23 +4,22 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import RankOverview from "@/components/RankOverview";
-import { listEntries, type Entry } from "@/lib/entries";
 import { LADDER_XP, rankFor, TIER_STYLES } from "@/lib/ranks";
-import { totals } from "@/lib/xp";
+import { getStats } from "@/lib/stats";
 
 export default function RanksPage() {
   const { user, loading } = useAuth();
-  const [entries, setEntries] = useState<Entry[] | null>(null);
+  const [stats, setStats] = useState<Awaited<ReturnType<typeof getStats>> | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     if (!user) return;
-    listEntries(user.id)
-      .then(setEntries)
+    getStats(user.id)
+      .then(setStats)
       .catch(() => setFailed(true));
   }, [user]);
 
-  if (loading || (user && !entries && !failed)) {
+  if (loading || (user && !stats && !failed)) {
     return <p className="py-24 text-center text-white/50">Loading your ranks…</p>;
   }
 
@@ -42,18 +41,18 @@ export default function RanksPage() {
     );
   }
 
-  if (failed || !entries) {
+  if (failed || !stats) {
     return (
       <p className="py-24 text-center text-red-300">Couldn&apos;t load your ranks. Try refreshing.</p>
     );
   }
 
-  const rank = rankFor(totals(entries).xp);
+  const rank = rankFor(stats.xp);
 
   return (
     <div className="flex flex-col gap-8 py-8">
       <h1 className="sr-only">Ranks</h1>
-      <RankOverview entries={entries} />
+      <RankOverview byType={stats.byType} />
 
       <section className="flex flex-col gap-3">
         <h2 className="text-xl font-black">The ladder</h2>

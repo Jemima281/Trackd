@@ -71,21 +71,6 @@ export async function removeConnection(otherId: string, selfId: string) {
   if (error) throw error;
 }
 
-// Total XP per user, from their (public) entries.
-export async function xpByUser(userIds: string[]) {
-  const result: Record<string, number> = Object.fromEntries(userIds.map((id) => [id, 0]));
-  if (userIds.length === 0) return result;
-  const { data, error } = await createClient()
-    .from("entries")
-    .select("user_id, xp")
-    .in("user_id", userIds);
-  if (error) throw error;
-  for (const row of data as { user_id: string; xp: number }[]) {
-    result[row.user_id] += row.xp;
-  }
-  return result;
-}
-
 export async function getProfileByUsername(username: string) {
   const { data, error } = await createClient()
     .from("profiles")
