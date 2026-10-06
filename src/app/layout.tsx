@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Nav from "@/components/Nav";
@@ -17,6 +17,14 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Trackd",
   description: "Collect, rank and compete on the media you consume.",
+  // When installed to an iPhone home screen: full screen, dark status bar.
+  appleWebApp: { title: "Trackd", statusBarStyle: "black-translucent" },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0b0b10",
+  // Draw under the notch / home bar; safe-area padding keeps content clear.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -28,7 +36,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         <AuthProvider>
           <Nav />
-          <main className="mx-auto w-full max-w-5xl flex-1 px-4 pb-24 sm:pb-8">
+          <main className="mx-auto w-full max-w-5xl flex-1 px-4 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:pb-8">
             {children}
           </main>
         </AuthProvider>

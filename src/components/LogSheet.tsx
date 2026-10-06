@@ -117,7 +117,7 @@ export default function LogSheet({
       <div
         role="dialog"
         aria-label={`Log ${media.title}`}
-        className="flex max-h-[90vh] w-full max-w-md flex-col gap-5 overflow-y-auto rounded-t-3xl border border-white/10 bg-[#15151c] p-6 pb-10 sm:rounded-3xl sm:pb-6"
+        className="flex max-h-[90vh] w-full max-w-md flex-col gap-5 overflow-y-auto rounded-t-3xl border border-white/10 bg-[#15151c] p-6 pb-[calc(2.5rem+env(safe-area-inset-bottom))] sm:rounded-3xl sm:pb-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex gap-4">

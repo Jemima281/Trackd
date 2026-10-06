@@ -67,7 +67,7 @@ export default function Nav() {
   return (
     <>
       {/* Top bar (desktop) */}
-      <header className="sticky top-0 z-10 border-b border-white/10 bg-background/80 backdrop-blur">
+      <header className="sticky top-0 z-10 border-b border-white/10 bg-background/80 pt-[env(safe-area-inset-top)] backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
           <Link href="/" className="text-xl font-black tracking-tight">
             track<span className="text-amber-400">d</span>
@@ -93,7 +93,7 @@ export default function Nav() {
       </header>
 
       {/* Bottom tab bar (phones) */}
-      <nav className="fixed inset-x-0 bottom-0 z-10 grid grid-cols-5 border-t border-white/10 bg-background/90 backdrop-blur sm:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-10 grid grid-cols-5 border-t border-white/10 bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur sm:hidden">
         <WithPathname Links={TabLinks} />
       </nav>
     </>
