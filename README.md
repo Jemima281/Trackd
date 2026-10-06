@@ -12,3 +12,7 @@ npm run dev
 ```
 
 Then open http://localhost:3000.
+
+## Deploying
+
+Every push to `main` is deployed automatically by Vercel.
