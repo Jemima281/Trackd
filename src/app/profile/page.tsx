@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import Avatar from "@/components/Avatar";
+import RankBadge from "@/components/RankBadge";
+import { rankFor, TIER_STYLES } from "@/lib/ranks";
 import { listEntries } from "@/lib/entries";
 import { createClient } from "@/lib/supabase/client";
 import { totals } from "@/lib/xp";
@@ -56,6 +58,14 @@ export default function ProfilePage() {
       <Avatar username={profile?.username ?? user.email ?? "?"} size="lg" />
       <h1 className="text-3xl font-black">@{profile?.username ?? "unknown"}</h1>
       {joined && <p className="text-white/50">Collecting since {joined}</p>}
+      {stats && (
+        <Link href="/ranks" className="flex items-center gap-2">
+          <RankBadge rank={rankFor(stats.xp)} size="sm" />
+          <span className={`font-bold ${TIER_STYLES[rankFor(stats.xp).tier].text}`}>
+            {rankFor(stats.xp).name}
+          </span>
+        </Link>
+      )}
       <div className="mt-2 flex gap-8">
         <div>
           <p className="text-3xl font-black text-amber-400">
