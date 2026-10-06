@@ -124,7 +124,15 @@ export default function UserProfile({ params }: { params: Promise<{ username: st
           Log in to add friend
         </Link>
       ) : relation === "friends" ? (
-        <span className={`${pill} border border-emerald-400/40 text-emerald-400`}>Friends ✓</span>
+        <>
+          <span className={`${pill} border border-emerald-400/40 text-emerald-400`}>Friends ✓</span>
+          <Link
+            href={`/compare/${profile.username}`}
+            className={`${pill} bg-amber-400 text-black hover:bg-amber-300`}
+          >
+            ⚔️ Compare
+          </Link>
+        </>
       ) : relation === "sent" ? (
         <button
           disabled={busy}
