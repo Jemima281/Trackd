@@ -1,5 +1,5 @@
 import Link from "next/link";
-import SupabaseStatus from "@/components/SupabaseStatus";
+import HomeSwitch from "@/components/HomeSwitch";
 
 const categories = [
   { name: "Anime", icon: "🌸", color: "from-pink-500/30" },
@@ -10,6 +10,10 @@ const categories = [
 ];
 
 export default function Home() {
+  return <HomeSwitch landing={<Landing />} />;
+}
+
+function Landing() {
   return (
     <div className="flex flex-col gap-12 py-12">
       <section className="flex flex-col items-center gap-5 text-center">
@@ -23,12 +27,11 @@ export default function Home() {
           among your friends is the real connoisseur.
         </p>
         <Link
-          href="/dex"
+          href="/signup"
           className="rounded-full bg-amber-400 px-6 py-3 font-bold text-black transition hover:bg-amber-300"
         >
-          Open my Dex
+          Start collecting
         </Link>
-        <SupabaseStatus />
       </section>
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-5">
