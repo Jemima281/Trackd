@@ -1,28 +1,28 @@
 import type { MediaType } from "@/lib/search";
 
 // Rank ladder, Liftoff-style: 6 tiers with 3 divisions each, then Legend.
-// Thresholds are in XP (≈ minutes) for the overall rank; each category uses
-// the same ladder scaled down, since e.g. music takes far less time than anime.
+// Thresholds are the XP needed for the overall rank; each category uses the
+// same ladder scaled down, since e.g. music takes far less time than anime.
 
 export type Tier = "Bronze" | "Silver" | "Gold" | "Platinum" | "Diamond" | "Master" | "Legend";
 
-const HOURS: [Tier, number[]][] = [
-  ["Bronze", [0, 10, 25]],
-  ["Silver", [50, 80, 120]],
-  ["Gold", [175, 250, 350]],
-  ["Platinum", [500, 700, 950]],
-  ["Diamond", [1300, 1700, 2200]],
-  ["Master", [3000, 4000, 5200]],
-  ["Legend", [7000]],
+export const LADDER_XP: [Tier, number[]][] = [
+  ["Bronze", [0, 500, 1_500]],
+  ["Silver", [3_000, 5_000, 7_500]],
+  ["Gold", [10_000, 15_000, 20_000]],
+  ["Platinum", [30_000, 40_000, 55_000]],
+  ["Diamond", [75_000, 100_000, 130_000]],
+  ["Master", [175_000, 240_000, 310_000]],
+  ["Legend", [400_000]],
 ];
 
 const DIVISIONS = ["I", "II", "III"];
 
-const LADDER = HOURS.flatMap(([tier, starts]) =>
-  starts.map((hours, i) => ({
+const LADDER = LADDER_XP.flatMap(([tier, starts]) =>
+  starts.map((minXp, i) => ({
     tier,
     division: tier === "Legend" ? null : DIVISIONS[i],
-    minXp: hours * 60,
+    minXp,
   })),
 );
 

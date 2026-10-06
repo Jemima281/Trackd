@@ -6,7 +6,7 @@ import { useAuth } from "@/components/AuthProvider";
 import RankBadge from "@/components/RankBadge";
 import RankProgress from "@/components/RankProgress";
 import { listEntries, type Entry } from "@/lib/entries";
-import { CATEGORY_SCALE, rankFor, TIER_STYLES } from "@/lib/ranks";
+import { CATEGORY_SCALE, LADDER_XP, rankFor, TIER_STYLES } from "@/lib/ranks";
 import type { MediaType } from "@/lib/search";
 import { totals } from "@/lib/xp";
 
@@ -69,10 +69,7 @@ export default function RanksPage() {
         </p>
         <RankBadge rank={rank} size="lg" />
         <h1 className={`text-4xl font-black ${TIER_STYLES[rank.tier].text}`}>{rank.name}</h1>
-        <p className="text-white/60">
-          <span className="font-bold text-white">{overall.xp.toLocaleString()} XP</span> ·{" "}
-          {overall.hours.toLocaleString()} hours
-        </p>
+        <p className="text-lg font-bold">{overall.xp.toLocaleString()} XP</p>
         <div className="w-full max-w-sm">
           <RankProgress rank={rank} />
         </div>
@@ -106,9 +103,28 @@ export default function RanksPage() {
         </div>
       </section>
 
-      <p className="text-center text-xs text-white/40">
-        Bronze → Silver → Gold → Platinum → Diamond → Master → Legend
-      </p>
+      <section className="flex flex-col gap-3">
+        <h2 className="text-xl font-black">The ladder</h2>
+        <div className="overflow-hidden rounded-2xl border border-white/10">
+          {LADDER_XP.map(([tier, starts]) => (
+            <div
+              key={tier}
+              className={`flex items-center justify-between gap-4 border-b border-white/5 px-4 py-3 last:border-0 ${
+                tier === rank.tier ? "bg-white/[0.06]" : ""
+              }`}
+            >
+              <span className={`font-bold ${TIER_STYLES[tier].text}`}>{tier}</span>
+              <span className="text-right text-sm tabular-nums text-white/60">
+                {starts.map((xp) => xp.toLocaleString()).join(" · ")} XP
+              </span>
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-white/40">
+          Overall rank. Category ranks use a shorter ladder — music is the quickest to
+          climb.
+        </p>
+      </section>
     </div>
   );
 }
