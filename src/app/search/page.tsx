@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAuth } from "@/components/AuthProvider";
+import LogSheet from "@/components/LogSheet";
 import MediaCard from "@/components/MediaCard";
+import { getEntriesFor, type Entry } from "@/lib/entries";
 import { searchMedia, type MediaResult, type MediaType } from "@/lib/search";
 
 const TABS: { type: MediaType; label: string }[] = [
@@ -17,6 +20,9 @@ export default function SearchPage() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<MediaResult[]>([]);
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const { user } = useAuth();
+  const [entries, setEntries] = useState<Record<string, Entry>>({});
+  const [selected, setSelected] = useState<MediaResult | null>(null);
 
   const tab = TABS.find((t) => t.type === type)!;
   const trimmed = query.trim();
@@ -42,6 +48,25 @@ export default function SearchPage() {
       clearTimeout(timer);
     };
   }, [type, trimmed]);
+
+  // Look up which results are already in the user's Dex, to badge them.
+  useEffect(() => {
+    if (!user || results.length === 0) return;
+    let cancelled = false;
+    getEntriesFor(user.id, results.map((r) => r.key))
+      .then((found) => {
+        if (cancelled) return;
+        setEntries((prev) => {
+          const next = { ...prev };
+          for (const e of found) next[e.media_key] = e;
+          return next;
+        });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [user, results]);
 
   const showResults = trimmed.length >= 2;
 
@@ -95,9 +120,30 @@ export default function SearchPage() {
           {results
             .filter((r) => r.type === type)
             .map((r) => (
-              <MediaCard key={r.key} item={r} />
+              <MediaCard
+                key={r.key}
+                item={r}
+                entry={user ? entries[r.key] : null}
+                onClick={() => setSelected(r)}
+              />
             ))}
         </div>
+      )}
+
+      {selected && (
+        <LogSheet
+          media={selected}
+          entry={entries[selected.key] ?? null}
+          onClose={() => setSelected(null)}
+          onSaved={(e) => setEntries((prev) => ({ ...prev, [e.media_key]: e }))}
+          onDeleted={(key) =>
+            setEntries((prev) => {
+              const next = { ...prev };
+              delete next[key];
+              return next;
+            })
+          }
+        />
       )}
     </div>
   );
