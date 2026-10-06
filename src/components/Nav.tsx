@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/components/AuthProvider";
+import Avatar from "@/components/Avatar";
 
 const links = [
   { href: "/", label: "Home", icon: "⌂" },
@@ -12,6 +14,7 @@ const links = [
 
 export default function Nav() {
   const pathname = usePathname();
+  const { user, profile, loading } = useAuth();
 
   return (
     <>
@@ -36,6 +39,20 @@ export default function Nav() {
               </Link>
             ))}
           </nav>
+          <div className="flex w-24 justify-end">
+            {loading ? null : user ? (
+              <Link href="/profile" aria-label="Your profile">
+                <Avatar username={profile?.username ?? user.email ?? "?"} />
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="rounded-full border border-white/15 px-4 py-1.5 text-sm font-medium hover:bg-white/10"
+              >
+                Log in
+              </Link>
+            )}
+          </div>
         </div>
       </header>
 
