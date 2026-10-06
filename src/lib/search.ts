@@ -16,7 +16,7 @@ export type MediaResult = {
 const ANILIST_QUERY = `
 query ($search: String, $type: MediaType) {
   Page(perPage: 24) {
-    media(search: $search, type: $type, isAdult: false, sort: SEARCH_MATCH) {
+    media(search: $search, type: $type, isAdult: false, sort: [SEARCH_MATCH, POPULARITY_DESC]) {
       id
       format
       episodes
@@ -94,43 +94,12 @@ async function searchAniList(query: string, type: "anime" | "manga") {
   });
 }
 
-type MusicBrainzReleaseGroup = {
-  id: string;
-  title: string;
-  "first-release-date"?: string;
-  "secondary-types"?: string[];
-  "artist-credit"?: { name: string; joinphrase?: string }[];
-};
-
-// Escape characters that have special meaning in MusicBrainz's search syntax.
-function escapeLucene(text: string) {
-  return text.replace(/[+\-&|!(){}[\]^"~*?:\\/]/g, "\\$&");
-}
-
+// Albums go through our own /api/albums route; see src/lib/albums.ts.
 async function searchAlbums(query: string) {
-  const lucene = `releasegroup:(${escapeLucene(query)}) AND primarytype:album`;
-  const res = await fetch(
-    `https://musicbrainz.org/ws/2/release-group?fmt=json&limit=24&query=${encodeURIComponent(lucene)}`,
-    { headers: { Accept: "application/json" } },
-  );
-  if (!res.ok) throw new Error(`MusicBrainz returned ${res.status}`);
-  const json = await res.json();
-  const groups: MusicBrainzReleaseGroup[] = json["release-groups"] ?? [];
-
-  return groups.map((g): MediaResult => {
-    const artist =
-      g["artist-credit"]?.map((c) => c.name + (c.joinphrase ?? "")).join("") || null;
-    const year = g["first-release-date"]?.slice(0, 4);
-    return {
-      key: `musicbrainz:${g.id}`,
-      type: "album",
-      title: g.title,
-      subtitle: artist,
-      year: year ? Number(year) : null,
-      cover: `https://coverartarchive.org/release-group/${g.id}/front-250`,
-      details: g["secondary-types"]?.join(" · ") || "Album",
-    };
-  });
+  const res = await fetch(`/api/albums?q=${encodeURIComponent(query)}`);
+  if (!res.ok) throw new Error(`Album search returned ${res.status}`);
+  const json: { results: MediaResult[] } = await res.json();
+  return json.results;
 }
 
 export async function searchMedia(type: MediaType, query: string) {
