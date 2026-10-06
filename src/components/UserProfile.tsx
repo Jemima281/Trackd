@@ -5,6 +5,7 @@ import { use, useCallback, useEffect, useState } from "react";
 import { useAuth, type Profile } from "@/components/AuthProvider";
 import Avatar from "@/components/Avatar";
 import DexBrowser from "@/components/DexBrowser";
+import LoadError, { describeError } from "@/components/LoadError";
 import RankOverview from "@/components/RankOverview";
 import { listEntries, type Entry } from "@/lib/entries";
 import { getStats, type XpByType } from "@/lib/stats";
@@ -20,7 +21,7 @@ import {
 type Loaded =
   | { profile: Profile; entries: Entry[]; byType: XpByType }
   | "missing"
-  | "error"
+  | { error: string }
   | null;
 
 // Anyone's public profile: rank, category ranks and their Dex.
@@ -43,8 +44,8 @@ export default function UserProfile({ params }: { params: Promise<{ username: st
           getStats(profile.id),
         ]);
         if (!cancelled) setData({ profile, entries, byType: stats.byType });
-      } catch {
-        if (!cancelled) setData("error");
+      } catch (err) {
+        if (!cancelled) setData({ error: describeError(err) });
       }
     })();
     return () => {
@@ -52,7 +53,7 @@ export default function UserProfile({ params }: { params: Promise<{ username: st
     };
   }, [username]);
 
-  const profileId = data && typeof data === "object" ? data.profile.id : null;
+  const profileId = data && typeof data === "object" && "profile" in data ? data.profile.id : null;
 
   const loadRelation = useCallback(async () => {
     if (!user || !profileId || user.id === profileId) return;
@@ -103,10 +104,8 @@ export default function UserProfile({ params }: { params: Promise<{ username: st
       </div>
     );
   }
-  if (data === "error") {
-    return (
-      <p className="py-24 text-center text-red-300">Couldn&apos;t load this profile. Try refreshing.</p>
-    );
+  if ("error" in data) {
+    return <LoadError what="this profile" detail={data.error} />;
   }
 
   const { profile, entries, byType } = data;

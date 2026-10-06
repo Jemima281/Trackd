@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, type Profile } from "@/components/AuthProvider";
 import Avatar from "@/components/Avatar";
+import LoadError, { describeError } from "@/components/LoadError";
 import RankBadge from "@/components/RankBadge";
 import {
   acceptRequest,
@@ -143,7 +144,8 @@ export default function FriendsPage() {
   const [period, setPeriod] = useState<Period>("week");
   const [category, setCategory] = useState<MediaType | null>(null);
   const [board, setBoard] = useState<LeaderboardRow[] | null>(null);
-  const [failed, setFailed] = useState(false);
+  const [failed, setFailed] = useState<string | null>(null);
+  const [boardError, setBoardError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const [query, setQuery] = useState("");
@@ -153,8 +155,8 @@ export default function FriendsPage() {
     if (!user) return;
     try {
       setConnections(await listConnections(user.id));
-    } catch {
-      setFailed(true);
+    } catch (err) {
+      setFailed(describeError(err));
     }
   }, [user]);
 
@@ -168,8 +170,12 @@ export default function FriendsPage() {
     if (!user || !connections) return;
     let cancelled = false;
     getLeaderboard(period, category)
-      .then((rows) => !cancelled && setBoard(rows))
-      .catch(() => !cancelled && setFailed(true));
+      .then((rows) => {
+        if (cancelled) return;
+        setBoard(rows);
+        setBoardError(null);
+      })
+      .catch((err) => !cancelled && setBoardError(describeError(err)));
     return () => {
       cancelled = true;
     };
@@ -223,9 +229,7 @@ export default function FriendsPage() {
   }
 
   if (failed || !connections) {
-    return (
-      <p className="py-24 text-center text-red-300">Couldn&apos;t load friends. Try refreshing.</p>
-    );
+    return <LoadError what="friends" detail={failed ?? ""} />;
   }
 
   const relationOf = (id: string) => connections.find((c) => c.profile.id === id)?.relation;
@@ -336,7 +340,11 @@ export default function FriendsPage() {
           <p className="text-xs text-white/40">XP earned since Monday. Resets every week.</p>
         )}
 
-        {!board ? (
+        {boardError ? (
+          <p className="break-words rounded-xl bg-white/5 px-4 py-3 text-center font-mono text-xs text-red-300/80">
+            Couldn&apos;t load the leaderboard: {boardError}
+          </p>
+        ) : !board ? (
           <p className="py-8 text-center text-white/50">Loading…</p>
         ) : (
           board.map((row, i) => {

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
+import LoadError, { describeError } from "@/components/LoadError";
 import RankOverview from "@/components/RankOverview";
 import { LADDER_XP, rankFor, TIER_STYLES } from "@/lib/ranks";
 import { getStats } from "@/lib/stats";
@@ -10,13 +11,13 @@ import { getStats } from "@/lib/stats";
 export default function RanksPage() {
   const { user, loading } = useAuth();
   const [stats, setStats] = useState<Awaited<ReturnType<typeof getStats>> | null>(null);
-  const [failed, setFailed] = useState(false);
+  const [failed, setFailed] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
     getStats(user.id)
       .then(setStats)
-      .catch(() => setFailed(true));
+      .catch((err) => setFailed(describeError(err)));
   }, [user]);
 
   if (loading || (user && !stats && !failed)) {
@@ -42,9 +43,7 @@ export default function RanksPage() {
   }
 
   if (failed || !stats) {
-    return (
-      <p className="py-24 text-center text-red-300">Couldn&apos;t load your ranks. Try refreshing.</p>
-    );
+    return <LoadError what="your ranks" detail={failed ?? ""} />;
   }
 
   const rank = rankFor(stats.xp);

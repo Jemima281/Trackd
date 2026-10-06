@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
+import LoadError, { describeError } from "@/components/LoadError";
 import DexBrowser from "@/components/DexBrowser";
 import LogSheet from "@/components/LogSheet";
 import { entryToMedia, listEntries, type Entry } from "@/lib/entries";
@@ -11,14 +12,14 @@ import { totals } from "@/lib/xp";
 export default function DexPage() {
   const { user, loading } = useAuth();
   const [entries, setEntries] = useState<Entry[] | null>(null);
-  const [failed, setFailed] = useState(false);
+  const [failed, setFailed] = useState<string | null>(null);
   const [selected, setSelected] = useState<Entry | null>(null);
 
   useEffect(() => {
     if (!user) return;
     listEntries(user.id)
       .then(setEntries)
-      .catch(() => setFailed(true));
+      .catch((err) => setFailed(describeError(err)));
   }, [user]);
 
   if (loading || (user && !entries && !failed)) {
@@ -43,11 +44,7 @@ export default function DexPage() {
   }
 
   if (failed || !entries) {
-    return (
-      <p className="py-24 text-center text-red-300">
-        Couldn&apos;t load your Dex. Try refreshing.
-      </p>
-    );
+    return <LoadError what="your Dex" detail={failed ?? ""} />;
   }
 
   const completed = entries.filter((e) => e.status === "completed").length;
