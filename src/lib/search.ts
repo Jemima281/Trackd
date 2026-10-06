@@ -102,6 +102,14 @@ async function searchAlbums(query: string) {
   return json.results;
 }
 
+// Movies and TV go through our own /api/tmdb route; see src/lib/tmdb.ts.
+async function searchMoviesAndTv(query: string, type: "movie" | "tv") {
+  const res = await fetch(`/api/tmdb?type=${type}&q=${encodeURIComponent(query)}`);
+  if (!res.ok) throw new Error(`Movie/TV search returned ${res.status}`);
+  const json: { results: MediaResult[] } = await res.json();
+  return json.results;
+}
+
 export async function searchMedia(type: MediaType, query: string) {
   switch (type) {
     case "anime":
@@ -109,8 +117,8 @@ export async function searchMedia(type: MediaType, query: string) {
       return searchAniList(query, type);
     case "album":
       return searchAlbums(query);
-    default:
-      // Movies and TV need a TMDB key — added in a later step.
-      return [];
+    case "movie":
+    case "tv":
+      return searchMoviesAndTv(query, type);
   }
 }

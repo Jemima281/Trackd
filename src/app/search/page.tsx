@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 import MediaCard from "@/components/MediaCard";
 import { searchMedia, type MediaResult, type MediaType } from "@/lib/search";
 
-const TABS: { type: MediaType; label: string; ready: boolean }[] = [
-  { type: "anime", label: "Anime", ready: true },
-  { type: "manga", label: "Manga", ready: true },
-  { type: "album", label: "Albums", ready: true },
-  { type: "movie", label: "Movies", ready: false },
-  { type: "tv", label: "TV", ready: false },
+const TABS: { type: MediaType; label: string }[] = [
+  { type: "anime", label: "Anime" },
+  { type: "manga", label: "Manga" },
+  { type: "movie", label: "Movies" },
+  { type: "tv", label: "TV" },
+  { type: "album", label: "Albums" },
 ];
 
 export default function SearchPage() {
@@ -23,7 +23,7 @@ export default function SearchPage() {
 
   // Wait until the user stops typing for a moment before searching.
   useEffect(() => {
-    if (!tab.ready || trimmed.length < 2) return;
+    if (trimmed.length < 2) return;
     let cancelled = false;
     const timer = setTimeout(async () => {
       setStatus("loading");
@@ -41,9 +41,9 @@ export default function SearchPage() {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [type, trimmed, tab.ready]);
+  }, [type, trimmed]);
 
-  const showResults = tab.ready && trimmed.length >= 2;
+  const showResults = trimmed.length >= 2;
 
   return (
     <div className="flex flex-col gap-6 py-8">
@@ -74,11 +74,7 @@ export default function SearchPage() {
         ))}
       </div>
 
-      {!tab.ready ? (
-        <p className="py-16 text-center text-white/50">
-          {tab.label} search is coming soon — it needs a free TMDB key first.
-        </p>
-      ) : !showResults ? (
+      {!showResults ? (
         <p className="py-16 text-center text-white/50">
           Type at least 2 letters to start searching.
         </p>
