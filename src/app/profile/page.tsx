@@ -85,6 +85,9 @@ export default function ProfilePage() {
           View my public profile
         </Link>
       )}
+      <Link href="/import" className="text-sm text-amber-400 hover:underline">
+        Import from other apps
+      </Link>
       <button
         onClick={signOut}
         className="rounded-full border border-white/15 px-5 py-2 text-sm text-white/70 hover:bg-white/10"

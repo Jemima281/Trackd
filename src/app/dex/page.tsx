@@ -29,7 +29,12 @@ export default function DexPage() {
   if (!user) {
     return (
       <div className="flex flex-col items-center gap-4 py-24 text-center">
-        <h1 className="text-4xl font-black">Your Dex</h1>
+        <div>
+          <h1 className="text-4xl font-black">Your Dex</h1>
+          <Link href="/import" className="text-sm text-amber-400 hover:underline">
+            Import from AniList, MAL, Letterboxd…
+          </Link>
+        </div>
         <p className="max-w-md text-white/60">
           Log in to start collecting everything you watch, read and listen to.
         </p>
@@ -53,7 +58,12 @@ export default function DexPage() {
   return (
     <div className="flex flex-col gap-6 py-8">
       <div className="flex items-end justify-between gap-4">
-        <h1 className="text-4xl font-black">Your Dex</h1>
+        <div>
+          <h1 className="text-4xl font-black">Your Dex</h1>
+          <Link href="/import" className="text-sm text-amber-400 hover:underline">
+            Import from AniList, MAL, Letterboxd…
+          </Link>
+        </div>
         <div className="flex gap-4 text-right text-sm text-white/50">
           <p>
             <span className="text-2xl font-black text-emerald-400">{completed}</span>{" "}
@@ -72,12 +82,20 @@ export default function DexPage() {
         empty={
           <div className="flex flex-col items-center gap-4 py-16 text-center">
             <p className="text-white/60">Your Dex is empty. Time to start collecting!</p>
-            <Link
-              href="/search"
-              className="rounded-full bg-amber-400 px-6 py-3 font-bold text-black hover:bg-amber-300"
-            >
-              Find something
-            </Link>
+            <div className="flex gap-2">
+              <Link
+                href="/search"
+                className="rounded-full bg-amber-400 px-6 py-3 font-bold text-black hover:bg-amber-300"
+              >
+                Find something
+              </Link>
+              <Link
+                href="/import"
+                className="rounded-full border border-white/15 px-6 py-3 text-white/80 hover:bg-white/10"
+              >
+                Import my lists
+              </Link>
+            </div>
           </div>
         }
       />

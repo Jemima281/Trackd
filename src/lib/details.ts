@@ -2,7 +2,7 @@
 // their search results don't include it; AniList is here for entries saved
 // before lengths were stored. Runs on our server.
 
-import { MANGA_MINUTES_PER_CHAPTER } from "@/lib/search";
+import { MANGA_MINUTES_PER_CHAPTER } from "@/lib/anilist";
 
 export type Length = { totalUnits: number | null; unitMinutes: number | null };
 
