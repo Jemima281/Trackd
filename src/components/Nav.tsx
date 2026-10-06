@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Suspense } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import Avatar from "@/components/Avatar";
 
@@ -13,8 +14,54 @@ const links = [
   { href: "/friends", label: "Friends", icon: "☺" },
 ];
 
+function TopLinks({ pathname }: { pathname: string | null }) {
+  return links.map((l) => (
+    <Link
+      key={l.href}
+      href={l.href}
+      className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+        pathname === l.href
+          ? "bg-amber-400 text-black"
+          : "text-white/70 hover:bg-white/10 hover:text-white"
+      }`}
+    >
+      {l.label}
+    </Link>
+  ));
+}
+
+function TabLinks({ pathname }: { pathname: string | null }) {
+  return links.map((l) => (
+    <Link
+      key={l.href}
+      href={l.href}
+      className={`flex flex-col items-center gap-0.5 py-2 text-xs ${
+        pathname === l.href ? "text-amber-400" : "text-white/60"
+      }`}
+    >
+      <span className="text-lg leading-none">{l.icon}</span>
+      {l.label}
+    </Link>
+  ));
+}
+
+// The current pathname isn't known while prerendering pages like
+// /u/[username], so only the link highlighting waits behind Suspense (showing
+// un-highlighted links meanwhile). Keep anything that reads auth state out of
+// these boundaries: auth can change before they hydrate, causing a mismatch.
+function Highlighted({ Links }: { Links: typeof TopLinks }) {
+  return <Links pathname={usePathname()} />;
+}
+
+function WithPathname({ Links }: { Links: typeof TopLinks }) {
+  return (
+    <Suspense fallback={<Links pathname={null} />}>
+      <Highlighted Links={Links} />
+    </Suspense>
+  );
+}
+
 export default function Nav() {
-  const pathname = usePathname();
   const { user, profile, loading } = useAuth();
 
   return (
@@ -26,19 +73,7 @@ export default function Nav() {
             track<span className="text-amber-400">d</span>
           </Link>
           <nav className="hidden gap-1 sm:flex">
-            {links.map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
-                  pathname === l.href
-                    ? "bg-amber-400 text-black"
-                    : "text-white/70 hover:bg-white/10 hover:text-white"
-                }`}
-              >
-                {l.label}
-              </Link>
-            ))}
+            <WithPathname Links={TopLinks} />
           </nav>
           <div className="flex w-24 justify-end">
             {loading ? null : user ? (
@@ -59,18 +94,7 @@ export default function Nav() {
 
       {/* Bottom tab bar (phones) */}
       <nav className="fixed inset-x-0 bottom-0 z-10 grid grid-cols-5 border-t border-white/10 bg-background/90 backdrop-blur sm:hidden">
-        {links.map((l) => (
-          <Link
-            key={l.href}
-            href={l.href}
-            className={`flex flex-col items-center gap-0.5 py-2 text-xs ${
-              pathname === l.href ? "text-amber-400" : "text-white/60"
-            }`}
-          >
-            <span className="text-lg leading-none">{l.icon}</span>
-            {l.label}
-          </Link>
-        ))}
+        <WithPathname Links={TabLinks} />
       </nav>
     </>
   );

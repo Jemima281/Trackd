@@ -45,8 +45,10 @@ function SmallButton({
 function PersonRow({ profile, children }: { profile: Profile; children?: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
-      <Avatar username={profile.username} />
-      <p className="min-w-0 flex-1 truncate font-semibold">@{profile.username}</p>
+      <Link href={`/u/${profile.username}`} className="flex min-w-0 flex-1 items-center gap-3">
+        <Avatar username={profile.username} />
+        <p className="truncate font-semibold hover:underline">@{profile.username}</p>
+      </Link>
       {children}
     </div>
   );
@@ -232,15 +234,17 @@ export default function FriendsPage() {
                 }`}
               >
                 <span className="w-5 text-center font-black text-white/40">{i + 1}</span>
-                <Avatar username={p.username} />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold">
-                    @{p.username} {isMe && <span className="text-white/40">(you)</span>}
-                  </p>
-                  <p className={`text-xs font-bold ${TIER_STYLES[rank.tier].text}`}>
-                    {rank.name} · {(xp[p.id] ?? 0).toLocaleString()} XP
-                  </p>
-                </div>
+                <Link href={`/u/${p.username}`} className="flex min-w-0 flex-1 items-center gap-3">
+                  <Avatar username={p.username} />
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold hover:underline">
+                      @{p.username} {isMe && <span className="text-white/40">(you)</span>}
+                    </p>
+                    <p className={`text-xs font-bold ${TIER_STYLES[rank.tier].text}`}>
+                      {rank.name} · {(xp[p.id] ?? 0).toLocaleString()} XP
+                    </p>
+                  </div>
+                </Link>
                 <RankBadge rank={rank} size="sm" />
                 {!isMe && (
                   <button

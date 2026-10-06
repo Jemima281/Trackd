@@ -78,9 +78,17 @@ export default function ProfilePage() {
           <p className="text-xs uppercase tracking-wide text-white/50">Hours</p>
         </div>
       </div>
+      {profile && (
+        <Link
+          href={`/u/${profile.username}`}
+          className="mt-6 rounded-full bg-amber-400 px-6 py-2.5 font-bold text-black hover:bg-amber-300"
+        >
+          View my public profile
+        </Link>
+      )}
       <button
         onClick={signOut}
-        className="mt-6 rounded-full border border-white/15 px-5 py-2 text-sm text-white/70 hover:bg-white/10"
+        className="rounded-full border border-white/15 px-5 py-2 text-sm text-white/70 hover:bg-white/10"
       >
         Log out
       </button>

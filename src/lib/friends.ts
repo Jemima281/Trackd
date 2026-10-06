@@ -85,3 +85,13 @@ export async function xpByUser(userIds: string[]) {
   }
   return result;
 }
+
+export async function getProfileByUsername(username: string) {
+  const { data, error } = await createClient()
+    .from("profiles")
+    .select("*")
+    .eq("username", username.toLowerCase())
+    .maybeSingle();
+  if (error) throw error;
+  return data as Profile | null;
+}
