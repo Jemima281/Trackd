@@ -25,9 +25,16 @@ export default function LogInPage() {
 
     if (error) {
       setError(
-        error.message === "Email not confirmed"
-          ? "Please click the confirmation link we emailed you first."
-          : "Wrong email or password.",
+        error.code === "invalid_credentials"
+          ? "Wrong email or password."
+          : error.code === "email_not_confirmed"
+            ? "Please click the confirmation link we emailed you first."
+            : error.status === 429
+              ? "Too many attempts. Wait a minute and try again."
+              : error.name === "AuthRetryableFetchError" || !error.status
+                ? "Couldn't reach the server. Check your connection, or try again in a minute."
+                : // Anything else: show the real reason.
+                  `Couldn't log in: ${error.message}`,
       );
       return;
     }
@@ -53,6 +60,9 @@ export default function LogInPage() {
           autoComplete="current-password"
           required
         />
+        <Link href="/forgot-password" className="-mt-2 self-end text-sm text-amber-400 hover:underline">
+          Forgot password?
+        </Link>
         {error && <Message kind="error">{error}</Message>}
         <SubmitButton busy={busy}>Log in</SubmitButton>
       </form>

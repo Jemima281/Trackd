@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
@@ -23,6 +24,7 @@ export function useAuth() {
 }
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const [state, setState] = useState<AuthState>({
     user: null,
     profile: null,
@@ -46,12 +48,17 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     }
 
     // Fires once on load (INITIAL_SESSION) and again on every sign in/out.
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      // A password reset link was opened: send them to pick a new password,
+      // even if the link landed on another page.
+      if (event === "PASSWORD_RECOVERY" && window.location.pathname !== "/reset-password") {
+        router.push("/reset-password");
+      }
       // Defer the profile query so it doesn't run inside the auth callback.
       setTimeout(() => load(session?.user ?? null), 0);
     });
     return () => sub.subscription.unsubscribe();
-  }, []);
+  }, [router]);
 
   return <AuthContext.Provider value={state}>{children}</AuthContext.Provider>;
 }
