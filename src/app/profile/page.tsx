@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import Avatar from "@/components/Avatar";
+import { showInstallPrompt } from "@/components/InstallPrompt";
 import { describeError } from "@/components/LoadError";
 import MediaCard from "@/components/MediaCard";
 import ProfileHeader from "@/components/ProfileHeader";
@@ -310,6 +311,12 @@ export default function ProfilePage() {
           />
           View my public profile
         </Link>
+        <button
+          onClick={showInstallPrompt}
+          className="rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold hover:bg-white/10"
+        >
+          📲 Install the app
+        </button>
         <Link href="/import" className="text-sm text-amber-400 hover:underline">
           Import from other apps
         </Link>
