@@ -37,6 +37,11 @@ Each file in `supabase/migrations/` is pasted into Supabase → SQL Editor
 - **Supabase → Authentication → URL Configuration:** Site URL is the live app
 - **Supabase → Authentication → Email:** "Confirm email" off while testing
 
+## If pages say "Loading…" forever
+
+Supabase pauses free projects after about a week with no activity. Open the
+project on supabase.com and click **Restore project**; nothing is lost.
+
 ## Next up
 
 See `docs/fix-later.md`.
