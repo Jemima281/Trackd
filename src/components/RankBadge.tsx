@@ -2,20 +2,19 @@
 
 import { useId } from "react";
 import type { Rank, Tier } from "@/lib/ranks";
+import type { MediaType } from "@/lib/search";
 
-// Rank emblems, drawn as SVG. Every tier shares a bevelled hexagon medallion
-// with a themed icon inside; the frame grows more ornate as you climb:
-//   Bronze  popcorn        riveted hexagon
-//   Silver  film reel      + side blades, gem
-//   Gold    clapperboard   + laurels, crest
-//   Platinum open manga    + feathered wings
-//   Diamond crossed katanas + crystal wings, diamond
-//   Master  oni mask       + horns, flames, laurels
-//   Legend  phoenix        + golden wings, crown, sunburst, stars
+// Rank emblems, drawn as SVG, Liftoff-style: the icon shows the category
+// (trophy for overall, katanas for anime, open manga, clapperboard for
+// movies, a TV set for TV) and the bevelled hexagon frame shows the tier,
+// growing more ornate as you climb:
+//   Bronze riveted hexagon · Silver side blades + gem · Gold laurels + gem ·
+//   Platinum feathered wings · Diamond crystal wings + diamond ·
+//   Master horns, flames, laurels · Legend golden wings, crown, sunburst
 //
 // To use artwork instead, put images in /public/ranks/ and list them here,
-// e.g. { Gold: "/ranks/gold.png" }.
-const IMAGE_OVERRIDES: Partial<Record<Tier, string>> = {};
+// keyed "category-Tier", e.g. { "manga-Gold": "/ranks/manga-gold.png" }.
+const IMAGE_OVERRIDES: Partial<Record<`${MediaType | "overall"}-${Tier}`, string>> = {};
 
 const SIZES = { sm: 44, md: 72, lg: 170 };
 
@@ -391,56 +390,6 @@ function Sparkles({ points }: { points: [number, number, number][] }) {
 
 // ---------- centre icons ----------
 
-function Popcorn({ p }: { p: Palette }) {
-  return (
-    <g>
-      {[
-        [84, 84, 9],
-        [96, 78, 10],
-        [109, 80, 9],
-        [118, 88, 8],
-        [90, 92, 8],
-        [104, 90, 9],
-        [80, 94, 7],
-      ].map(([x, y, r]) => (
-        <circle key={`${x}-${y}`} cx={x} cy={y} r={r} fill="#fff7e0" stroke={p.dark} strokeWidth="1.3" />
-      ))}
-      <path d="M76 96 H124 L116 134 H84 Z" fill="#fff4e6" stroke={p.dark} strokeWidth="1.6" strokeLinejoin="round" />
-      {[0, 1, 2].map((i) => (
-        <path
-          key={i}
-          d={`M${82 + i * 14} 96 H${90 + i * 14} L${89 + i * 12} 134 H${83 + i * 12} Z`}
-          fill="#d93a2e"
-        />
-      ))}
-      <path d="M76 96 H124" stroke={p.dark} strokeWidth="2.5" />
-    </g>
-  );
-}
-
-function FilmReel({ p }: { p: Palette }) {
-  return (
-    <g>
-      <path
-        d="M118 120 C130 128 140 128 148 118 L152 126 C142 138 128 138 114 128 Z"
-        fill={p.dark}
-        stroke={p.deep}
-        strokeWidth="1"
-      />
-      {[0, 1, 2].map((i) => (
-        <rect key={i} x={122 + i * 9} y={123 + (i === 1 ? 3 : 0)} width="3.5" height="3" fill={p.light} rx="0.5" />
-      ))}
-      <circle cx="98" cy="100" r="30" fill={p.light} stroke={p.dark} strokeWidth="2" />
-      <circle cx="98" cy="100" r="25" fill="none" stroke={p.mid} strokeWidth="1.5" />
-      {Array.from({ length: 6 }, (_, i) => {
-        const a = (i / 6) * Math.PI * 2 - Math.PI / 2;
-        return <circle key={i} cx={98 + Math.cos(a) * 15} cy={100 + Math.sin(a) * 15} r="6.5" fill={p.deep} stroke={p.dark} />;
-      })}
-      <circle cx="98" cy="100" r="5" fill={p.mid} stroke={p.dark} strokeWidth="1.5" />
-    </g>
-  );
-}
-
 function Clapper({ p }: { p: Palette }) {
   return (
     <g>
@@ -489,95 +438,130 @@ function Manga({ p }: { p: Palette }) {
 }
 
 function Katanas({ p }: { p: Palette }) {
+  // One sword drawn from bottom-left to top-right, then mirrored.
   const sword = (
     <g>
-      <path d="M70 132 L134 66 L138 64 L136 68 L74 136 Z" fill="#f8fbff" stroke={p.deep} strokeWidth="1.3" strokeLinejoin="round" />
-      <path d="M72 133 L135 66" stroke={p.mid} strokeWidth="0.9" />
-      <ellipse cx="74" cy="132" rx="7" ry="3" transform="rotate(-45 74 132)" fill="#d4af37" stroke={p.deep} strokeWidth="1.2" />
-      <path d="M58 150 L71 135 L74 138 L61 153 Z" fill="#1f1f2e" stroke={p.deep} strokeWidth="1.2" />
-      {[0, 1, 2].map((i) => (
-        <path key={i} d={`M${61 + i * 3.5} ${148 - i * 4} l4 3`} stroke={p.light} strokeWidth="1.2" />
+      {/* blade with a lighter cutting edge */}
+      <path
+        d="M76 126 L134 61 Q140 56 144 54 Q143 60 139 66 L84 134 Z"
+        fill="#eef4ff"
+        stroke={p.deep}
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <path d="M80 130 L139 61" stroke="#9fb3cf" strokeWidth="2" />
+      {/* guard */}
+      <ellipse cx="80" cy="130" rx="9" ry="3.6" transform="rotate(-48 80 130)" fill="#e2b33d" stroke={p.deep} strokeWidth="1.3" />
+      {/* wrapped handle */}
+      <path d="M61 151 L76 133 L82 138 L67 156 Z" fill="#1d1d2b" stroke={p.deep} strokeWidth="1.3" strokeLinejoin="round" />
+      {[0, 1, 2, 3].map((i) => (
+        <path
+          key={i}
+          d={`M${65 + i * 3.7} ${149 - i * 4.4} l3.2 2.8 M${68 + i * 3.7} ${146 - i * 4.4} l-0.6 5`}
+          stroke="#f5f5f5"
+          strokeWidth="1"
+        />
       ))}
+      <circle cx="63" cy="154.5" r="2.4" fill="#e2b33d" stroke={p.deep} strokeWidth="0.8" />
     </g>
   );
   return (
     <g>
+      {/* rising sun behind the swords */}
+      <circle cx="100" cy="100" r="25" fill="#e0312b" stroke={p.deep} strokeWidth="1.5" />
+      <circle cx="100" cy="100" r="25" fill="none" stroke="#ff8a7a" strokeWidth="1.2" transform="translate(-1 -1)" opacity="0.7" />
       {sword}
       <g transform={`translate(${CX * 2} 0) scale(-1 1)`}>{sword}</g>
     </g>
   );
 }
 
-function Oni({ p }: { p: Palette }) {
+function Television({ p }: { p: Palette }) {
   return (
     <g>
-      <path d="M80 82 L72 58 L88 76 Z M120 82 L128 58 L112 76 Z" fill="#f5ecd7" stroke={p.deep} strokeWidth="1.4" strokeLinejoin="round" />
+      <path d="M88 80 L76 62 M112 80 L124 62" stroke={p.deep} strokeWidth="2.6" strokeLinecap="round" />
+      <circle cx="76" cy="62" r="3" fill={p.light} stroke={p.deep} strokeWidth="1.2" />
+      <circle cx="124" cy="62" r="3" fill={p.light} stroke={p.deep} strokeWidth="1.2" />
+      <path d="M84 132 L80 140 M116 132 L120 140" stroke={p.deep} strokeWidth="3" strokeLinecap="round" />
+      <rect x="66" y="80" width="68" height="54" rx="9" fill="#f3efe6" stroke={p.deep} strokeWidth="1.8" />
+      <rect x="72" y="86" width="44" height="42" rx="7" fill="#1d2433" stroke={p.deep} strokeWidth="1.4" />
+      <path d="M77 92 Q86 88 98 90 L80 112 Z" fill="#ffffff" opacity="0.25" />
+      <path d="M86 100 L100 108 L86 116 Z" fill={p.light} />
+      <circle cx="125" cy="93" r="3.6" fill={p.mid} stroke={p.deep} strokeWidth="1" />
+      <circle cx="125" cy="104" r="3.6" fill={p.mid} stroke={p.deep} strokeWidth="1" />
+      <path d="M121 114 H129 M121 118 H129 M121 122 H129" stroke={p.dark} strokeWidth="1.4" strokeLinecap="round" />
+    </g>
+  );
+}
+
+function Trophy({ p }: { p: Palette }) {
+  return (
+    <g>
       <path
-        d="M100 72 C122 72 132 88 130 108 C128 126 116 138 100 140 C84 138 72 126 70 108 C68 88 78 72 100 72 Z"
-        fill="#e23b2e"
+        d="M78 82 C64 82 62 104 82 108 M122 82 C136 82 138 104 118 108"
+        fill="none"
         stroke={p.deep}
-        strokeWidth="1.8"
+        strokeWidth="5"
+        strokeLinecap="round"
       />
-      <path d="M78 94 L94 100 M122 94 L106 100" stroke="#2a0505" strokeWidth="4" strokeLinecap="round" />
-      <path d="M80 102 Q87 96 94 104 Q87 108 80 102 Z M120 102 Q113 96 106 104 Q113 108 120 102 Z" fill="#fde68a" stroke="#2a0505" strokeWidth="1.2" />
-      <path d="M96 108 L100 116 L104 108" fill="none" stroke="#2a0505" strokeWidth="1.6" />
-      <path d="M82 120 Q100 136 118 120 Q100 128 82 120 Z" fill="#2a0505" />
-      <path d="M86 121 L89 129 L92 123 Z M114 121 L111 129 L108 123 Z" fill="#fff" />
+      <path
+        d="M78 82 C64 82 62 104 82 108 M122 82 C136 82 138 104 118 108"
+        fill="none"
+        stroke={p.light}
+        strokeWidth="2.4"
+        strokeLinecap="round"
+      />
+      <path d="M76 76 H124 V90 C124 108 112 118 100 118 C88 118 76 108 76 90 Z" fill={`url(#trophy-${p.mid.slice(1)})`} stroke={p.deep} strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M100 84 L103.5 92 L112 92.5 L105.5 98 L107.5 106 L100 101.5 L92.5 106 L94.5 98 L88 92.5 L96.5 92 Z" fill="#fffbe6" stroke={p.dark} strokeWidth="0.8" />
+      <path d="M95 118 H105 L107 128 H93 Z" fill={p.mid} stroke={p.deep} strokeWidth="1.4" />
+      <rect x="84" y="128" width="32" height="8" rx="2" fill={p.dark} stroke={p.deep} strokeWidth="1.4" />
+      <rect x="88" y="130.5" width="24" height="3" rx="1" fill={p.light} opacity="0.6" />
+      <defs>
+        <linearGradient id={`trophy-${p.mid.slice(1)}`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#ffffff" />
+          <stop offset="0.5" stopColor={p.light} />
+          <stop offset="1" stopColor={p.mid} />
+        </linearGradient>
+      </defs>
     </g>
   );
 }
 
-function Phoenix({ p }: { p: Palette }) {
-  return (
-    <g>
-      <Mirror>
-        {[0, 1, 2, 3].map((i) => (
-          <path
-            key={i}
-            d={blade(96, 104, 40 - i * 5, -150 - i * 14, 5.5)}
-            fill={i % 2 ? "#ffd56b" : "#ff8a3d"}
-            stroke="#7a1d00"
-            strokeWidth="1"
-          />
-        ))}
-      </Mirror>
-      {[0, -18, 18].map((d) => (
-        <path key={d} d={blade(100, 118, 30, 90 + d, 5)} fill="#ff6a2b" stroke="#7a1d00" strokeWidth="1" />
-      ))}
-      <path d="M100 86 C108 92 108 112 100 124 C92 112 92 92 100 86 Z" fill="#ffcf4a" stroke="#7a1d00" strokeWidth="1.2" />
-      <circle cx="100" cy="82" r="7" fill="#ffcf4a" stroke="#7a1d00" strokeWidth="1.2" />
-      <path d="M100 75 C98 66 104 62 106 58 C106 66 108 70 104 76 Z" fill="#ff6a2b" stroke="#7a1d00" strokeWidth="0.8" />
-      <path d="M100 86 L95 90 L100 89 Z" fill="#7a1d00" />
-      <circle cx="102.5" cy="81" r="1.4" fill={p.deep} />
-    </g>
-  );
-}
+// Some icons are drawn small; scale them to fill the medallion evenly.
+const ICON_SCALE: Record<MediaType | "overall", number> = {
+  overall: 1.3,
+  anime: 1,
+  manga: 1.05,
+  movie: 1.05,
+  tv: 1.15,
+};
 
-const ICONS: Record<Tier, (props: { p: Palette }) => React.ReactNode> = {
-  Bronze: Popcorn,
-  Silver: FilmReel,
-  Gold: Clapper,
-  Platinum: Manga,
-  Diamond: Katanas,
-  Master: Oni,
-  Legend: Phoenix,
+// The icon shows what the rank is for; the frame shows how high it is.
+const ICONS: Record<MediaType | "overall", (props: { p: Palette }) => React.ReactNode> = {
+  overall: Trophy,
+  anime: Katanas,
+  manga: Manga,
+  movie: Clapper,
+  tv: Television,
 };
 
 // ---------- the emblem ----------
 
 export default function RankBadge({
   rank,
+  category,
   size = "md",
 }: {
   rank: Rank;
+  category?: MediaType; // leave out for the overall rank
   size?: keyof typeof SIZES;
 }) {
   const id = `rk${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   const tier = rank.tier;
   const p = PALETTES[tier];
   const px = SIZES[size];
-  const Icon = ICONS[tier];
-  const override = IMAGE_OVERRIDES[tier];
+  const Icon = ICONS[category ?? "overall"];
+  const override = IMAGE_OVERRIDES[`${category ?? "overall"}-${tier}`];
   const winged = tier === "Platinum" || tier === "Diamond" || tier === "Legend";
 
   if (override) {
@@ -667,7 +651,10 @@ export default function RankBadge({
         opacity="0.6"
       />
 
-      <g filter={`url(#${id}-shadow)`} transform="translate(0 -4)">
+      <g
+        filter={`url(#${id}-shadow)`}
+        transform={`translate(${CX} ${CY - 4}) scale(${ICON_SCALE[category ?? "overall"]}) translate(${-CX} ${-CY})`}
+      >
         <Icon p={p} />
       </g>
 

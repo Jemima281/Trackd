@@ -96,6 +96,7 @@ function LeaderboardItem({
   row,
   isMe,
   scale,
+  category,
   busy,
   onRemove,
 }: {
@@ -103,6 +104,7 @@ function LeaderboardItem({
   row: LeaderboardRow;
   isMe: boolean;
   scale: number | null; // null hides the rank badge
+  category: MediaType | null;
   busy: boolean;
   onRemove?: () => void;
 }) {
@@ -126,7 +128,9 @@ function LeaderboardItem({
           <p className="text-xs font-bold text-amber-400">{row.xp.toLocaleString()} XP</p>
         </div>
       </Link>
-      {scale !== null && <RankBadge rank={rankFor(row.xp, scale)} size="sm" />}
+      {scale !== null && (
+        <RankBadge rank={rankFor(row.xp, scale)} category={category ?? undefined} size="sm" />
+      )}
       {onRemove && (
         <button
           title="Remove friend"
@@ -360,6 +364,7 @@ export default function FriendsPage() {
                 row={row}
                 isMe={isMe}
                 scale={period === "all" ? scale : null}
+                category={category}
                 busy={busyId === row.user_id}
                 onRemove={
                   friend

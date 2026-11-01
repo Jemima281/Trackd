@@ -44,7 +44,7 @@ export default function RankOverview({
                 key={c.type}
                 className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4"
               >
-                <RankBadge rank={r} />
+                <RankBadge rank={r} category={c.type} />
                 <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                   <div className="flex items-baseline justify-between gap-2">
                     <p className="font-bold">
