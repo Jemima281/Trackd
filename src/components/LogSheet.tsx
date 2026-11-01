@@ -14,7 +14,7 @@ import {
 } from "@/lib/entries";
 import RatingPicker from "@/components/RatingPicker";
 import type { MediaResult } from "@/lib/search";
-import { UNIT_NAMES, xpFor } from "@/lib/xp";
+import { MAX_UNKNOWN_UNITS, UNIT_NAMES, xpFor } from "@/lib/xp";
 
 // Pop-up for adding an item to your Dex or changing how it's logged.
 export default function LogSheet({
@@ -37,28 +37,44 @@ export default function LogSheet({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Movies and TV don't include their length in search results, so
-  // fetch it when the sheet opens.
-  const [length, setLength] = useState<Pick<MediaResult, "totalUnits" | "unitMinutes">>({
-    totalUnits: media.totalUnits,
-    unitMinutes: media.unitMinutes,
-  });
-  const needsLength = length.unitMinutes === undefined;
+  const isMovie = media.type === "movie";
+
+  // Movies and TV don't include their length in search results, and ongoing
+  // series have no official total, so look those up when the sheet opens.
+  const [length, setLength] = useState<
+    Pick<MediaResult, "totalUnits" | "unitMinutes"> & { maxUnits?: number }
+  >({ totalUnits: media.totalUnits, unitMinutes: media.unitMinutes });
+  const needsLength =
+    length.unitMinutes === undefined ||
+    (!isMovie && length.totalUnits == null && length.maxUnits === undefined);
   useEffect(() => {
     if (!needsLength) return;
     let cancelled = false;
     fetch(`/api/details?key=${encodeURIComponent(media.key)}`)
       .then((res) => (res.ok ? res.json() : Promise.reject()))
       .then((found) => !cancelled && setLength(found))
-      .catch(() => !cancelled && setLength({ totalUnits: null, unitMinutes: null }));
+      .catch(
+        () =>
+          !cancelled &&
+          setLength((prev) => ({
+            totalUnits: prev.totalUnits ?? null,
+            unitMinutes: prev.unitMinutes ?? null,
+            maxUnits: MAX_UNKNOWN_UNITS,
+          })),
+      );
     return () => {
       cancelled = true;
     };
   }, [needsLength, media.key]);
 
   const total = length.totalUnits ?? null;
-  const isMovie = media.type === "movie";
-  const xp = status ? xpFor(status, progress, length.unitMinutes ?? null) : 0;
+  // Highest progress allowed: the real total, or a safe cap for ongoing series.
+  const limit = total ?? length.maxUnits ?? MAX_UNKNOWN_UNITS;
+  // Completed with a known total means all of it, even if the total arrived
+  // after "Completed" was tapped.
+  const allDone = status === "completed" && !!total;
+  const shownProgress = allDone ? total : Math.min(progress, limit);
+  const xp = status ? xpFor(status, shownProgress, length.unitMinutes ?? null) : 0;
 
   function pickStatus(s: Status) {
     setStatus(s);
@@ -85,7 +101,7 @@ export default function LogSheet({
           { ...media, totalUnits: total, unitMinutes: length.unitMinutes ?? null },
           status,
           rating,
-          progress,
+          shownProgress,
           entry,
         ),
       );
@@ -175,11 +191,12 @@ export default function LogSheet({
                     type="number"
                     inputMode="numeric"
                     min={0}
-                    max={total ?? 20000}
-                    value={progress}
+                    max={limit}
+                    value={shownProgress}
+                    readOnly={allDone}
                     onChange={(e) => {
                       const n = Math.max(0, Math.floor(Number(e.target.value) || 0));
-                      setProgress(Math.min(n, total ?? 20000));
+                      setProgress(Math.min(n, limit));
                     }}
                     className="w-20 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-right text-base text-white outline-none focus:border-amber-400"
                   />
@@ -188,6 +205,13 @@ export default function LogSheet({
                   </span>
                 </span>
               </label>
+            )}
+            {!isMovie && !needsLength && !total && (
+              <p className="-mt-3 text-xs text-white/40">
+                Still running, so there&apos;s no official count. Enter how many{" "}
+                {UNIT_NAMES[media.type]} you&apos;ve {media.type === "manga" ? "read" : "watched"}{" "}
+                (up to {limit.toLocaleString()}).
+              </p>
             )}
 
             <RatingPicker value={rating} onChange={setRating} />

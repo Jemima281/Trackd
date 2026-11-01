@@ -11,6 +11,15 @@ export function xpFor(status: Status, progress: number, unitMinutes: number | nu
   );
 }
 
+// Absolute ceiling when nothing better is known.
+export const MAX_UNKNOWN_UNITS = 2500;
+
+// Weekly series put out at most ~60 chapters/episodes a year.
+export function capFromStartYear(startYear: number | null | undefined) {
+  const years = startYear ? new Date().getFullYear() - startYear + 1 : 40;
+  return Math.min(MAX_UNKNOWN_UNITS, Math.max(12, years * 60));
+}
+
 export const UNIT_NAMES: Record<MediaType, string> = {
   anime: "episodes",
   tv: "episodes",

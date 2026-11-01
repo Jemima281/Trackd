@@ -22,7 +22,7 @@ Every push to `main` goes live on Vercel within about a minute.
 ## Database setup
 
 Each file in `supabase/migrations/` is pasted into Supabase → SQL Editor
-→ Run, once, in order. All eight have been handed over:
+→ Run, once, in order:
 
 | File | Adds |
 |---|---|
@@ -34,6 +34,7 @@ Each file in `supabase/migrations/` is pasted into Supabase → SQL Editor
 | 0006_activity.sql | activity feed |
 | 0007_import.sql | importing |
 | 0008_ratings_profiles.sql | removes music, 0.0–10.0 ratings, profile customisation |
+| 0009_progress_caps.sql | limits on progress for ongoing series |
 
 ## Settings outside the code
 

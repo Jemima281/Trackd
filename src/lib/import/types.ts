@@ -1,5 +1,6 @@
 import type { Status } from "@/lib/entries";
 import { cleanRating } from "@/lib/rating";
+import { MAX_UNKNOWN_UNITS } from "@/lib/xp";
 import type { MediaResult } from "@/lib/search";
 
 export type ImportItem = {
@@ -23,7 +24,7 @@ export function tidy(item: ImportItem): ImportItem {
   let progress = Math.max(0, Math.min(Math.round(item.progress) || 0, 20000));
   if (item.media.type === "movie") progress = item.status === "completed" ? 1 : 0;
   else if (item.status === "completed" && total) progress = total;
-  if (total) progress = Math.min(progress, total);
+  progress = Math.min(progress, total ?? MAX_UNKNOWN_UNITS);
   // Other apps use 0 for "not rated".
   const rating = item.rating ? cleanRating(item.rating) : null;
   const minutes = item.media.unitMinutes;
