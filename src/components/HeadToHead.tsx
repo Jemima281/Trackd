@@ -10,6 +10,8 @@ import RankBadge from "@/components/RankBadge";
 import { entryToMedia, listEntries, type Entry } from "@/lib/entries";
 import { getProfileByUsername } from "@/lib/friends";
 import { CATEGORY_SCALE, rankFor, TIER_STYLES } from "@/lib/ranks";
+import { shownName } from "@/lib/profile";
+import { formatRating } from "@/lib/rating";
 import type { MediaType } from "@/lib/search";
 import { getStats, type XpByType } from "@/lib/stats";
 
@@ -22,7 +24,6 @@ const CATEGORIES: { type: MediaType; label: string; icon: string }[] = [
   { type: "manga", label: "Manga", icon: "📖" },
   { type: "movie", label: "Movies", icon: "🎬" },
   { type: "tv", label: "TV", icon: "📺" },
-  { type: "album", label: "Music", icon: "💿" },
 ];
 
 async function loadSide(profile: Profile): Promise<Side> {
@@ -91,14 +92,14 @@ export default function HeadToHead({ params }: { params: Promise<{ username: str
   const shared = me.entries
     .filter((e) => e.status === "completed" && theirByKey.get(e.media_key)?.status === "completed")
     .map((mine) => ({ mine, theirs: theirByKey.get(mine.media_key)! }));
-  const bothRated = shared.filter((s) => s.mine.rating && s.theirs.rating);
+  const bothRated = shared.filter((s) => s.mine.rating != null && s.theirs.rating != null);
   const myAvg = average(bothRated.map((s) => s.mine.rating!));
   const theirAvg = average(bothRated.map((s) => s.theirs.rating!));
   // 100% = identical ratings on everything, 0% = as far apart as possible.
   const agreement = bothRated.length
     ? Math.round(
         100 -
-          (average(bothRated.map((s) => Math.abs(s.mine.rating! - s.theirs.rating!)))! / 9) * 100,
+          (average(bothRated.map((s) => Math.abs(s.mine.rating! - s.theirs.rating!)))! / 10) * 100,
       )
     : null;
   const biggestFight = [...bothRated].sort(
@@ -125,8 +126,13 @@ export default function HeadToHead({ params }: { params: Promise<{ username: str
         leading ? "bg-amber-400/10 ring-1 ring-amber-400/40" : ""
       }`}
     >
-      <Avatar username={side.profile.username} size="lg" />
-      <p className="max-w-full truncate font-black">@{side.profile.username}</p>
+      <Avatar
+        username={side.profile.username}
+        emoji={side.profile.avatar_emoji}
+        color={side.profile.avatar_color}
+        size="lg"
+      />
+      <p className="max-w-full truncate font-black">{shownName(side.profile)}</p>
       <div className="flex items-center gap-1.5">
         <RankBadge rank={rank} size="sm" />
         <span className={`text-sm font-bold ${TIER_STYLES[rank.tier].text}`}>{rank.name}</span>
@@ -211,8 +217,8 @@ export default function HeadToHead({ params }: { params: Promise<{ username: str
         {biggestFight && biggestFight.mine.rating !== biggestFight.theirs.rating && (
           <p className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white/70">
             🥊 Biggest disagreement: <strong>{biggestFight.mine.title}</strong> — you gave it{" "}
-            <strong className="text-amber-400">{biggestFight.mine.rating}</strong>, they gave it{" "}
-            <strong className="text-sky-400">{biggestFight.theirs.rating}</strong>.
+            <strong className="text-amber-400">{formatRating(biggestFight.mine.rating!)}</strong>, they gave it{" "}
+            <strong className="text-sky-400">{formatRating(biggestFight.theirs.rating!)}</strong>.
           </p>
         )}
       </section>
@@ -225,9 +231,9 @@ export default function HeadToHead({ params }: { params: Promise<{ username: str
               <div key={mine.id} className="flex flex-col gap-1">
                 <MediaCard item={entryToMedia(mine)} />
                 <p className="text-xs">
-                  <span className="font-bold text-amber-400">You {mine.rating ?? "–"}</span>
+                  <span className="font-bold text-amber-400">You {mine.rating != null ? formatRating(mine.rating) : "–"}</span>
                   <span className="text-white/30"> · </span>
-                  <span className="font-bold text-sky-400">Them {theirs.rating ?? "–"}</span>
+                  <span className="font-bold text-sky-400">Them {theirs.rating != null ? formatRating(theirs.rating) : "–"}</span>
                 </p>
               </div>
             ))}
@@ -244,7 +250,7 @@ export default function HeadToHead({ params }: { params: Promise<{ username: str
             {recs.map((e) => (
               <div key={e.id} className="flex flex-col gap-1">
                 <MediaCard item={entryToMedia(e)} />
-                <p className="text-xs font-bold text-sky-400">They gave it ★ {e.rating}</p>
+                <p className="text-xs font-bold text-sky-400">They gave it ★ {formatRating(e.rating!)}</p>
               </div>
             ))}
           </div>

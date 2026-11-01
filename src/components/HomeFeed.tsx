@@ -7,22 +7,25 @@ import Avatar from "@/components/Avatar";
 import { describeError } from "@/components/LoadError";
 import { STATUS_STYLES, statusLabel } from "@/lib/entries";
 import { describeAction, getFeed, timeAgo, type FeedItem } from "@/lib/feed";
+import { formatRating } from "@/lib/rating";
 
 function FeedRow({ item }: { item: FeedItem }) {
   const showProgress = item.status === "in_progress" && item.total_units && item.media_type !== "movie";
   return (
     <div className="flex gap-3 border-b border-white/5 py-4 last:border-0">
       <Link href={`/u/${item.username}`} className="shrink-0">
-        <Avatar username={item.username} />
+        <Avatar username={item.username} emoji={item.avatar_emoji} color={item.avatar_color} />
       </Link>
       <div className="min-w-0 flex-1">
         <p className="text-sm leading-snug text-white/80">
           <Link href={`/u/${item.username}`} className="font-bold text-white hover:underline">
-            @{item.username}
+            {item.display_name || `@${item.username}`}
           </Link>{" "}
           {describeAction(item)} <span className="font-bold text-white">{item.title}</span>
-          {item.rating && (
-            <span className="ml-1 whitespace-nowrap font-bold text-amber-400">★ {item.rating}</span>
+          {item.rating != null && (
+            <span className="ml-1 whitespace-nowrap font-bold text-amber-400">
+              ★ {formatRating(item.rating)}
+            </span>
           )}
         </p>
         <p className="mt-1 flex items-center gap-2 text-xs text-white/40">
@@ -45,9 +48,7 @@ function FeedRow({ item }: { item: FeedItem }) {
           src={item.cover}
           alt=""
           loading="lazy"
-          className={`w-12 shrink-0 rounded-md object-cover ${
-            item.media_type === "album" ? "aspect-square self-start" : "aspect-[2/3]"
-          }`}
+          className="aspect-[2/3] w-12 shrink-0 rounded-md object-cover"
         />
       )}
     </div>

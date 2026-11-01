@@ -1,4 +1,4 @@
-// Looks up an item's length (for XP). Movies, TV and albums need this because
+// Looks up an item's length (for XP). Movies and TV need this because
 // their search results don't include it; AniList is here for entries saved
 // before lengths were stored. Runs on our server.
 
@@ -34,29 +34,6 @@ export async function lookUpLength(key: string): Promise<Length> {
       const runtime =
         show.episode_run_time?.[0] ?? show.last_episode_to_air?.runtime ?? 45;
       return { totalUnits: show.number_of_episodes || null, unitMinutes: runtime };
-    }
-    case "deezer": {
-      const album = await getJson(`https://api.deezer.com/album/${id}`);
-      if (album.error) throw new Error(`Deezer error: ${JSON.stringify(album.error)}`);
-      const tracks = album.nb_tracks || null;
-      return {
-        totalUnits: tracks,
-        unitMinutes: tracks && album.duration ? album.duration / 60 / tracks : 3.5,
-      };
-    }
-    case "itunes": {
-      const json = await getJson(`https://itunes.apple.com/lookup?entity=song&id=${id}`);
-      const songs = (json.results ?? []).filter(
-        (r: { wrapperType: string }) => r.wrapperType === "track",
-      );
-      const ms = songs.reduce(
-        (sum: number, s: { trackTimeMillis?: number }) => sum + (s.trackTimeMillis ?? 0),
-        0,
-      );
-      return {
-        totalUnits: songs.length || null,
-        unitMinutes: songs.length && ms ? ms / 60000 / songs.length : 3.5,
-      };
     }
     case "anilist": {
       const json = await getJson("https://graphql.anilist.co", {

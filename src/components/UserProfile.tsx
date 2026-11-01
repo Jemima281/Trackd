@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { use, useCallback, useEffect, useState } from "react";
 import { useAuth, type Profile } from "@/components/AuthProvider";
-import Avatar from "@/components/Avatar";
 import DexBrowser from "@/components/DexBrowser";
 import LoadError, { describeError } from "@/components/LoadError";
+import MediaCard from "@/components/MediaCard";
+import ProfileHeader from "@/components/ProfileHeader";
 import RankOverview from "@/components/RankOverview";
-import { listEntries, type Entry } from "@/lib/entries";
+import { entryToMedia, listEntries, type Entry } from "@/lib/entries";
+import { shownName } from "@/lib/profile";
 import { getStats, type XpByType } from "@/lib/stats";
 import {
   acceptRequest,
@@ -109,6 +111,8 @@ export default function UserProfile({ params }: { params: Promise<{ username: st
   }
 
   const { profile, entries, byType } = data;
+  const byKey = new Map(entries.map((e) => [e.media_key, e]));
+  const favorites = profile.favorites.map((k) => byKey.get(k)).filter((e): e is Entry => !!e);
   const isMe = user?.id === profile.id;
   const pill =
     "rounded-full px-5 py-2 text-sm font-bold transition disabled:opacity-50";
@@ -169,20 +173,23 @@ export default function UserProfile({ params }: { params: Promise<{ username: st
 
   return (
     <div className="flex flex-col gap-8 py-8">
-      <RankOverview
-        byType={byType}
-        title="Rank"
-        header={
-          <>
-            <Avatar username={profile.username} size="lg" />
-            <h1 className="text-3xl font-black">@{profile.username}</h1>
-            {actions}
-          </>
-        }
-      />
+      <ProfileHeader profile={profile}>{actions}</ProfileHeader>
+
+      {favorites.length > 0 && (
+        <section className="flex flex-col gap-3">
+          <h2 className="text-xl font-black">Favourites</h2>
+          <div className="grid grid-cols-4 gap-2">
+            {favorites.map((e) => (
+              <MediaCard key={e.id} item={entryToMedia(e)} entry={e} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      <RankOverview byType={byType} title="Rank" />
 
       <section className="flex flex-col gap-4">
-        <h2 className="text-xl font-black">{isMe ? "Your Dex" : `@${profile.username}'s Dex`}</h2>
+        <h2 className="text-xl font-black">{isMe ? "Your Dex" : `${shownName(profile)}'s Dex`}</h2>
         <DexBrowser
           entries={entries}
           empty={<p className="py-16 text-center text-white/50">Nothing logged yet.</p>}

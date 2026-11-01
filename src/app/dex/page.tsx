@@ -36,7 +36,7 @@ export default function DexPage() {
           </Link>
         </div>
         <p className="max-w-md text-white/60">
-          Log in to start collecting everything you watch, read and listen to.
+          Log in to start collecting everything you watch and read.
         </p>
         <Link
           href="/login"

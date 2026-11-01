@@ -3,20 +3,21 @@
 
 import { aniListQuery, aniListToMedia, MEDIA_FIELDS, type AniListMedia } from "@/lib/anilist";
 
-export type MediaType = "anime" | "manga" | "movie" | "tv" | "album";
+export const MEDIA_TYPES = ["anime", "manga", "movie", "tv"] as const;
+export type MediaType = (typeof MEDIA_TYPES)[number];
 
 export type MediaResult = {
   key: string; // unique across sources, e.g. "anilist:21"
   type: MediaType;
   title: string;
-  subtitle: string | null; // alternate title or artist
+  subtitle: string | null; // alternate title
   year: number | null;
   cover: string | null;
   details: string | null; // e.g. "TV · 24 episodes"
   // Length, used for XP. Undefined means "not looked up yet" (see /api/details);
   // null means the source doesn't know (e.g. an ongoing manga).
-  totalUnits?: number | null; // episodes, chapters, tracks, or 1 for a movie
-  unitMinutes?: number | null; // average minutes per episode/chapter/track
+  totalUnits?: number | null; // episodes, chapters, or 1 for a movie
+  unitMinutes?: number | null; // average minutes per episode/chapter
 };
 
 const SEARCH_QUERY = `
@@ -36,14 +37,6 @@ async function searchAniList(query: string, type: "anime" | "manga") {
   return data.Page.media.map((m) => aniListToMedia(m, type));
 }
 
-// Albums go through our own /api/albums route; see src/lib/albums.ts.
-async function searchAlbums(query: string) {
-  const res = await fetch(`/api/albums?q=${encodeURIComponent(query)}`);
-  if (!res.ok) throw new Error(`Album search returned ${res.status}`);
-  const json: { results: MediaResult[] } = await res.json();
-  return json.results;
-}
-
 // Movies and TV go through our own /api/tmdb route; see src/lib/tmdb.ts.
 async function searchMoviesAndTv(query: string, type: "movie" | "tv") {
   const res = await fetch(`/api/tmdb?type=${type}&q=${encodeURIComponent(query)}`);
@@ -57,8 +50,6 @@ export async function searchMedia(type: MediaType, query: string) {
     case "anime":
     case "manga":
       return searchAniList(query, type);
-    case "album":
-      return searchAlbums(query);
     case "movie":
     case "tv":
       return searchMoviesAndTv(query, type);

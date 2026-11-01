@@ -90,7 +90,7 @@ export async function importLetterboxd(files: File[], onProgress?: OnProgress) {
   watchlist.forEach((r) => add(r, "planning"));
   for (const r of ratings) {
     const film = films.get(r["Letterboxd URI"] || `${r.Name}|${r.Year}`);
-    // Letterboxd uses 0.5–5 stars; we use 1–10.
+    // Letterboxd uses 0.5–5 stars; we use 0–10.
     if (film && Number(r.Rating)) film.rating = Number(r.Rating) * 2;
   }
   return matchAll([...films.values()], onProgress);

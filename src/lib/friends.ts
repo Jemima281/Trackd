@@ -78,5 +78,5 @@ export async function getProfileByUsername(username: string) {
     .eq("username", username.toLowerCase())
     .maybeSingle();
   if (error) throw error;
-  return data as Profile | null;
+  return data ? ({ ...data, favorites: data.favorites ?? [] } as Profile) : null;
 }

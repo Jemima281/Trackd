@@ -15,7 +15,6 @@ export const UNIT_NAMES: Record<MediaType, string> = {
   anime: "episodes",
   tv: "episodes",
   manga: "chapters",
-  album: "tracks",
   movie: "movie",
 };
 

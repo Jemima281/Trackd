@@ -31,7 +31,7 @@ query ($name: String, $type: MediaType) {
       isCustomList
       entries {
         status
-        score(format: POINT_10)
+        score(format: POINT_10_DECIMAL)
         progress
         completedAt { year month day }
         updatedAt

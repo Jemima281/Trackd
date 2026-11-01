@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import type { MediaResult, MediaType } from "@/lib/search";
+import { MEDIA_TYPES, type MediaResult, type MediaType } from "@/lib/search";
 
 export type Status = "planning" | "in_progress" | "dropped" | "completed";
 
@@ -31,7 +31,6 @@ const IN_PROGRESS_LABEL: Record<MediaType, string> = {
   movie: "Watching",
   tv: "Watching",
   manga: "Reading",
-  album: "Listening",
 };
 
 export function statusLabel(status: Status, type: MediaType) {
@@ -53,6 +52,11 @@ export const STATUS_STYLES: Record<Status, { badge: string; button: string }> = 
   dropped: { badge: "bg-red-400 text-black", button: "border-red-400 bg-red-400/15 text-red-300" },
   completed: { badge: "bg-emerald-400 text-black", button: "border-emerald-400 bg-emerald-400/15 text-emerald-300" },
 };
+
+// numeric columns can arrive as strings; normalise once here.
+function normalise(e: Entry): Entry {
+  return { ...e, rating: e.rating == null ? null : Number(e.rating) };
+}
 
 export function entryToMedia(e: Entry): MediaResult {
   return {
@@ -79,7 +83,7 @@ export async function getEntriesFor(userId: string, keys: string[]) {
     .eq("user_id", userId)
     .in("media_key", keys);
   if (error) throw error;
-  return data as Entry[];
+  return (data as Entry[]).map(normalise);
 }
 
 export async function listEntries(userId: string) {
@@ -87,9 +91,10 @@ export async function listEntries(userId: string) {
     .from("entries")
     .select("*")
     .eq("user_id", userId)
+    .in("media_type", MEDIA_TYPES)
     .order("updated_at", { ascending: false });
   if (error) throw error;
-  return data as Entry[];
+  return (data as Entry[]).map(normalise);
 }
 
 export async function saveEntry(
@@ -131,7 +136,7 @@ export async function saveEntry(
     .select()
     .single();
   if (error) throw error;
-  return data as Entry;
+  return normalise(data as Entry);
 }
 
 export async function deleteEntry(id: string) {

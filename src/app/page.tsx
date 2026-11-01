@@ -6,7 +6,6 @@ const categories = [
   { name: "Manga", icon: "📖", color: "from-violet-500/30" },
   { name: "Movies", icon: "🎬", color: "from-red-500/30" },
   { name: "TV Shows", icon: "📺", color: "from-sky-500/30" },
-  { name: "Albums", icon: "💿", color: "from-emerald-500/30" },
 ];
 
 export default function Home() {
@@ -20,7 +19,7 @@ function Landing() {
         <h1 className="text-5xl font-black tracking-tight sm:text-6xl">
           Collect everything
           <br />
-          you <span className="text-amber-400">watch, read &amp; hear</span>.
+          you <span className="text-amber-400">watch &amp; read</span>.
         </h1>
         <p className="max-w-lg text-lg text-white/60">
           Stamp your Dex, earn XP, rank up from Bronze to Legend, and see who
@@ -34,7 +33,7 @@ function Landing() {
         </Link>
       </section>
 
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {categories.map((c) => (
           <div
             key={c.name}

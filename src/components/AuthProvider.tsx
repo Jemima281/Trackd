@@ -1,11 +1,21 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 
-export type Profile = { id: string; username: string; created_at: string };
+export type Profile = {
+  id: string;
+  username: string;
+  created_at: string;
+  display_name: string | null;
+  bio: string | null;
+  avatar_emoji: string | null;
+  avatar_color: string | null;
+  banner: string | null;
+  favorites: string[];
+};
 
 type AuthState = {
   user: User | null;
@@ -13,14 +23,21 @@ type AuthState = {
   loading: boolean;
 };
 
-const AuthContext = createContext<AuthState>({
+const AuthContext = createContext<AuthState & { refreshProfile: () => Promise<void> }>({
   user: null,
   profile: null,
   loading: true,
+  refreshProfile: async () => {},
 });
 
 export function useAuth() {
   return useContext(AuthContext);
+}
+
+async function fetchProfile(userId: string): Promise<Profile | null> {
+  const { data } = await createClient().from("profiles").select("*").eq("id", userId).maybeSingle();
+  // Columns added later may be missing until the matching migration has run.
+  return data ? { ...data, favorites: data.favorites ?? [] } : null;
 }
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -39,12 +56,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         setState({ user: null, profile: null, loading: false });
         return;
       }
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .maybeSingle();
-      setState({ user, profile: data, loading: false });
+      setState({ user, profile: await fetchProfile(user.id), loading: false });
     }
 
     // Fires once on load (INITIAL_SESSION) and again on every sign in/out.
@@ -60,5 +72,14 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     return () => sub.subscription.unsubscribe();
   }, [router]);
 
-  return <AuthContext.Provider value={state}>{children}</AuthContext.Provider>;
+  // After editing your profile, so the nav and pages show the changes.
+  const refreshProfile = useCallback(async () => {
+    if (!state.user) return;
+    const profile = await fetchProfile(state.user.id);
+    setState((prev) => ({ ...prev, profile }));
+  }, [state.user]);
+
+  return (
+    <AuthContext.Provider value={{ ...state, refreshProfile }}>{children}</AuthContext.Provider>
+  );
 }

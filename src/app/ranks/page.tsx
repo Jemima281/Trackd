@@ -29,7 +29,7 @@ export default function RanksPage() {
       <div className="flex flex-col items-center gap-4 py-24 text-center">
         <h1 className="text-4xl font-black">Ranks</h1>
         <p className="max-w-md text-white/60">
-          Earn XP for every minute you watch, read and listen, and climb from Bronze to
+          Earn XP for every minute you watch and read, and climb from Bronze to
           Legend.
         </p>
         <Link
@@ -71,8 +71,7 @@ export default function RanksPage() {
           ))}
         </div>
         <p className="text-xs text-white/40">
-          Overall rank. Category ranks use a shorter ladder — music is the quickest to
-          climb.
+          Overall rank. Category ranks use a shorter ladder.
         </p>
       </section>
     </div>

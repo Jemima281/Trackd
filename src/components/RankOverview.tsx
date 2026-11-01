@@ -9,18 +9,15 @@ const CATEGORIES: { type: MediaType; label: string; icon: string }[] = [
   { type: "manga", label: "Manga", icon: "📖" },
   { type: "movie", label: "Movies", icon: "🎬" },
   { type: "tv", label: "TV", icon: "📺" },
-  { type: "album", label: "Music", icon: "💿" },
 ];
 
 // Overall rank card plus one card per category, for any user.
 export default function RankOverview({
   byType,
   title = "Overall rank",
-  header,
 }: {
   byType: XpByType;
   title?: string;
-  header?: React.ReactNode; // shown above the badge, e.g. an avatar
 }) {
   const xp = Object.values(byType).reduce((a, b) => a + b, 0);
   const rank = rankFor(xp);
@@ -28,7 +25,6 @@ export default function RankOverview({
   return (
     <>
       <section className="flex flex-col items-center gap-4 rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-transparent px-6 py-10 text-center">
-        {header}
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">{title}</p>
         <RankBadge rank={rank} size="lg" />
         <h2 className={`text-4xl font-black ${TIER_STYLES[rank.tier].text}`}>{rank.name}</h2>

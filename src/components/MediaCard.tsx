@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { statusLabel, STATUS_STYLES, type Entry } from "@/lib/entries";
+import { formatRating } from "@/lib/rating";
 import type { MediaResult } from "@/lib/search";
 
-const ICONS = { anime: "🌸", manga: "📖", movie: "🎬", tv: "📺", album: "💿" };
+const ICONS = { anime: "🌸", manga: "📖", movie: "🎬", tv: "📺" };
 
 export default function MediaCard({
   item,
@@ -16,14 +17,11 @@ export default function MediaCard({
   onClick?: () => void;
 }) {
   const [broken, setBroken] = useState(false);
-  const square = item.type === "album";
 
   return (
     <button onClick={onClick} className="group flex flex-col gap-2 text-left">
       <div
-        className={`relative w-full overflow-hidden rounded-xl border border-white/10 bg-white/5 transition group-hover:border-amber-400/60 ${
-          square ? "aspect-square" : "aspect-[2/3]"
-        }`}
+        className="relative aspect-[2/3] w-full overflow-hidden rounded-xl border border-white/10 bg-white/5 transition group-hover:border-amber-400/60"
       >
         {item.cover && !broken ? (
           // Covers come from many hosts, so a plain <img> is simpler than next/image here.
@@ -47,9 +45,9 @@ export default function MediaCard({
             {statusLabel(entry.status, item.type)}
           </span>
         )}
-        {entry?.rating && (
+        {entry?.rating != null && (
           <span className="absolute bottom-1.5 right-1.5 rounded-full bg-black/80 px-2 py-0.5 text-xs font-bold text-amber-400">
-            ★ {entry.rating}
+            ★ {formatRating(entry.rating)}
           </span>
         )}
       </div>

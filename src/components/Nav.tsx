@@ -78,7 +78,11 @@ export default function Nav() {
           <div className="flex w-24 justify-end">
             {loading ? null : user ? (
               <Link href="/profile" aria-label="Your profile">
-                <Avatar username={profile?.username ?? user.email ?? "?"} />
+                <Avatar
+                  username={profile?.username ?? user.email ?? "?"}
+                  emoji={profile?.avatar_emoji}
+                  color={profile?.avatar_color}
+                />
               </Link>
             ) : (
               <Link

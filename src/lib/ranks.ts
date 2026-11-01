@@ -2,7 +2,7 @@ import type { MediaType } from "@/lib/search";
 
 // Rank ladder, Liftoff-style: 6 tiers with 3 divisions each, then Legend.
 // Thresholds are the XP needed for the overall rank; each category uses the
-// same ladder scaled down, since e.g. music takes far less time than anime.
+// same ladder scaled down, since one category alone takes longer to climb.
 
 export type Tier = "Bronze" | "Silver" | "Gold" | "Platinum" | "Diamond" | "Master" | "Legend";
 
@@ -31,7 +31,6 @@ export const CATEGORY_SCALE: Record<MediaType, number> = {
   tv: 0.5,
   manga: 0.35,
   movie: 0.3,
-  album: 0.15,
 };
 
 export type Rank = {

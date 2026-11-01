@@ -12,7 +12,6 @@ const TABS: { type: MediaType; label: string }[] = [
   { type: "manga", label: "Manga" },
   { type: "movie", label: "Movies" },
   { type: "tv", label: "TV" },
-  { type: "album", label: "Albums" },
 ];
 
 export default function SearchPage() {

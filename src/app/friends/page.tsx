@@ -16,6 +16,7 @@ import {
 } from "@/lib/friends";
 import { CATEGORY_SCALE, rankFor } from "@/lib/ranks";
 import type { MediaType } from "@/lib/search";
+import { shownName } from "@/lib/profile";
 import { getLeaderboard, type LeaderboardRow, type Period } from "@/lib/stats";
 
 const CATEGORIES: { type: MediaType | null; label: string }[] = [
@@ -24,7 +25,6 @@ const CATEGORIES: { type: MediaType | null; label: string }[] = [
   { type: "manga", label: "Manga" },
   { type: "movie", label: "Movies" },
   { type: "tv", label: "TV" },
-  { type: "album", label: "Music" },
 ];
 
 function Toggle({
@@ -78,8 +78,11 @@ function PersonRow({ profile, children }: { profile: Profile; children?: React.R
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
       <Link href={`/u/${profile.username}`} className="flex min-w-0 flex-1 items-center gap-3">
-        <Avatar username={profile.username} />
-        <p className="truncate font-semibold hover:underline">@{profile.username}</p>
+        <Avatar username={profile.username} emoji={profile.avatar_emoji} color={profile.avatar_color} />
+        <div className="min-w-0">
+          <p className="truncate font-semibold hover:underline">{shownName(profile)}</p>
+          {profile.display_name && <p className="truncate text-xs text-white/40">@{profile.username}</p>}
+        </div>
       </Link>
       {children}
     </div>
@@ -115,10 +118,10 @@ function LeaderboardItem({
         <span className="w-6 text-center font-black text-white/40">{place}</span>
       )}
       <Link href={`/u/${row.username}`} className="flex min-w-0 flex-1 items-center gap-3">
-        <Avatar username={row.username} />
+        <Avatar username={row.username} emoji={row.avatar_emoji} color={row.avatar_color} />
         <div className="min-w-0">
           <p className="truncate font-semibold hover:underline">
-            @{row.username} {isMe && <span className="text-white/40">(you)</span>}
+            {shownName(row)} {isMe && <span className="text-white/40">(you)</span>}
           </p>
           <p className="text-xs font-bold text-amber-400">{row.xp.toLocaleString()} XP</p>
         </div>

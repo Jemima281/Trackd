@@ -6,10 +6,13 @@ Every push to `main` goes live on Vercel within about a minute.
 ## What's built
 
 - Accounts (sign up / log in) and profiles with usernames
-- Search: anime + manga (AniList), movies + TV (TMDB), albums (Deezer)
-- Logging: Planning / Watching / Dropped / Completed, 1–10 rating, progress
+- Search: anime + manga (AniList), movies + TV (TMDB)
+- Logging: Planning / Watching / Dropped / Completed, 0.0–10.0 rating, progress
+- Dex: search, sort (recent, rating, title, XP, year) and rating filters
 - XP: 1 per minute spent + 50 for finishing
-- Ranks: Bronze → Legend, overall and per category
+- Ranks: Bronze → Legend, overall and per category, with an emblem per tier
+- Profiles: display name, bio, emoji avatar + colour, banner, top 4 favourites
+- Password reset
 - Friends: requests, public profiles (`/u/username`), leaderboard
   (this week / all time, per category), head-to-head (`/compare/username`)
 - Activity feed on the home page
@@ -19,7 +22,7 @@ Every push to `main` goes live on Vercel within about a minute.
 ## Database setup
 
 Each file in `supabase/migrations/` is pasted into Supabase → SQL Editor
-→ Run, once, in order. All seven have been handed over:
+→ Run, once, in order. All eight have been handed over:
 
 | File | Adds |
 |---|---|
@@ -30,6 +33,7 @@ Each file in `supabase/migrations/` is pasted into Supabase → SQL Editor
 | 0005_leaderboard.sql | XP history, leaderboard, totals |
 | 0006_activity.sql | activity feed |
 | 0007_import.sql | importing |
+| 0008_ratings_profiles.sql | removes music, 0.0–10.0 ratings, profile customisation |
 
 ## Settings outside the code
 

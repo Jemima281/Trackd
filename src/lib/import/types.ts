@@ -1,10 +1,11 @@
 import type { Status } from "@/lib/entries";
+import { cleanRating } from "@/lib/rating";
 import type { MediaResult } from "@/lib/search";
 
 export type ImportItem = {
   media: MediaResult;
   status: Status;
-  rating: number | null; // 1–10
+  rating: number | null; // 0.0–10.0
   progress: number; // episodes/chapters/tracks done
   date: string | null; // ISO date of completion or last update, if known
 };
@@ -23,8 +24,8 @@ export function tidy(item: ImportItem): ImportItem {
   if (item.media.type === "movie") progress = item.status === "completed" ? 1 : 0;
   else if (item.status === "completed" && total) progress = total;
   if (total) progress = Math.min(progress, total);
-  const rating =
-    item.rating && item.rating >= 1 ? Math.min(10, Math.max(1, Math.round(item.rating))) : null;
+  // Other apps use 0 for "not rated".
+  const rating = item.rating ? cleanRating(item.rating) : null;
   const minutes = item.media.unitMinutes;
   return {
     ...item,

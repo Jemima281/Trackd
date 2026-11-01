@@ -12,6 +12,7 @@ import {
   type Entry,
   type Status,
 } from "@/lib/entries";
+import RatingPicker from "@/components/RatingPicker";
 import type { MediaResult } from "@/lib/search";
 import { UNIT_NAMES, xpFor } from "@/lib/xp";
 
@@ -36,7 +37,7 @@ export default function LogSheet({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Movies, TV and albums don't include their length in search results, so
+  // Movies and TV don't include their length in search results, so
   // fetch it when the sheet opens.
   const [length, setLength] = useState<Pick<MediaResult, "totalUnits" | "unitMinutes">>({
     totalUnits: media.totalUnits,
@@ -126,9 +127,7 @@ export default function LogSheet({
             <img
               src={media.cover}
               alt=""
-              className={`w-20 shrink-0 rounded-lg object-cover ${
-                media.type === "album" ? "aspect-square" : "aspect-[2/3]"
-              }`}
+              className="aspect-[2/3] w-20 shrink-0 rounded-lg object-cover"
             />
           )}
           <div className="min-w-0">
@@ -191,27 +190,7 @@ export default function LogSheet({
               </label>
             )}
 
-            <div className="flex flex-col gap-2">
-              <p className="text-sm font-medium text-white/70">
-                Your rating{" "}
-                <span className="text-white/40">(optional — tap again to clear)</span>
-              </p>
-              <div className="grid grid-cols-10 gap-1">
-                {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-                  <button
-                    key={n}
-                    onClick={() => setRating(rating === n ? null : n)}
-                    className={`rounded-lg py-2 text-sm font-bold transition ${
-                      rating !== null && n <= rating
-                        ? "bg-amber-400 text-black"
-                        : "bg-white/5 text-white/50 hover:bg-white/10"
-                    }`}
-                  >
-                    {n}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <RatingPicker value={rating} onChange={setRating} />
 
             {error && <p className="text-sm text-red-300">{error}</p>}
 

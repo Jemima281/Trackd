@@ -5,6 +5,9 @@ import { createClient } from "@/lib/supabase/client";
 export type FeedItem = {
   id: number;
   username: string;
+  display_name: string | null;
+  avatar_emoji: string | null;
+  avatar_color: string | null;
   media_key: string;
   media_type: MediaType;
   title: string;
@@ -25,7 +28,10 @@ export async function getFeed(before?: string) {
     max_rows: 30,
   });
   if (error) throw error;
-  return data as FeedItem[];
+  return (data as FeedItem[]).map((f) => ({
+    ...f,
+    rating: f.rating == null ? null : Number(f.rating),
+  }));
 }
 
 const VERBS: Record<MediaType, { doing: string; did: string; plan: string; unit: string }> = {
@@ -33,7 +39,6 @@ const VERBS: Record<MediaType, { doing: string; did: string; plan: string; unit:
   tv: { doing: "watching", did: "watched", plan: "watch", unit: "episode" },
   movie: { doing: "watching", did: "watched", plan: "watch", unit: "" },
   manga: { doing: "reading", did: "read", plan: "read", unit: "chapter" },
-  album: { doing: "listening to", did: "listened to", plan: "listen to", unit: "track" },
 };
 
 // The verb phrase before the title, e.g. "completed", "watched 5 episodes of".
