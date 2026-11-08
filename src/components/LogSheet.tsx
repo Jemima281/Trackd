@@ -89,6 +89,9 @@ export default function LogSheet({
   const allDone = status === "completed" && !!total;
   const shownProgress = allDone ? total : Math.min(progress, limit);
   const xp = status ? xpFor(status, shownProgress, length.unitMinutes ?? null) : 0;
+  // Books: e-readers show % rather than pages, so progress can be typed as either.
+  const [inPercent, setInPercent] = useState(false);
+  const percent = inPercent && media.type === "book" && !!total;
 
   function pickStatus(s: Status) {
     setStatus(s);
@@ -199,23 +202,34 @@ export default function LogSheet({
 
             {!isMovie && (
               <label className="flex items-center justify-between gap-3 text-sm font-medium text-white/70">
-                <span className="first-letter:uppercase">{UNIT_NAMES[media.type]} done</span>
+                <span className="flex items-center gap-2">
+                  <span className="first-letter:uppercase">{percent ? "Read" : `${UNIT_NAMES[media.type]} done`}</span>
+                  {media.type === "book" && total && (
+                    <button
+                      type="button"
+                      onClick={() => setInPercent((v) => !v)}
+                      className="rounded-full border border-white/15 px-2 py-0.5 text-xs text-white/60 hover:bg-white/10"
+                    >
+                      {percent ? "use pages" : "use %"}
+                    </button>
+                  )}
+                </span>
                 <span className="flex items-center gap-2">
                   <input
                     type="number"
                     inputMode="numeric"
                     min={0}
-                    max={limit}
-                    value={shownProgress}
+                    max={percent ? 100 : limit}
+                    value={percent ? Math.round((shownProgress / total) * 100) : shownProgress}
                     readOnly={allDone}
                     onChange={(e) => {
                       const n = Math.max(0, Math.floor(Number(e.target.value) || 0));
-                      setProgress(Math.min(n, limit));
+                      setProgress(percent ? Math.round((Math.min(n, 100) / 100) * total) : Math.min(n, limit));
                     }}
                     className="w-20 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-right text-base text-white outline-none focus:border-amber-400"
                   />
                   <span className="w-14 text-white/40">
-                    {needsLength ? "of …" : total ? `of ${total}` : "of ?"}
+                    {percent ? "%" : needsLength ? "of …" : total ? `of ${total}` : "of ?"}
                   </span>
                 </span>
               </label>

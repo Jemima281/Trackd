@@ -3,7 +3,7 @@
 // series, which have no official episode/chapter count. Runs on our server.
 
 import { MANGA_MINUTES_PER_CHAPTER, MANHWA_MINUTES_PER_CHAPTER } from "@/lib/anilist";
-import { MINUTES_PER_PAGE } from "@/lib/books";
+import { minutesPerPage, MINUTES_PER_PAGE } from "@/lib/books";
 import { capFromStartYear, MAX_UNKNOWN_UNITS } from "@/lib/xp";
 
 export type Length = {
@@ -89,12 +89,29 @@ async function tmdb(path: string) {
   });
 }
 
+// A book with no page count in search: take the middle page count of its
+// editions (ignoring box sets and pamphlets), and its reading pace from its
+// subjects. If no edition lists pages, the reader enters theirs.
+async function bookLength(id: string): Promise<Length> {
+  const [work, editions] = await Promise.all([
+    getJson(`https://openlibrary.org/works/${id}.json`).catch(() => ({})),
+    getJson(`https://openlibrary.org/works/${id}/editions.json?limit=100`).catch(() => ({})),
+  ]);
+  const pages = ((editions.entries ?? []) as { number_of_pages?: number }[])
+    .map((e) => e.number_of_pages ?? 0)
+    .filter((n) => n >= 8 && n <= 3000)
+    .sort((a, b) => a - b);
+  const median = pages.length ? pages[Math.floor(pages.length / 2)] : null;
+  return {
+    totalUnits: median,
+    unitMinutes: minutesPerPage(work.subjects ?? [], median) || MINUTES_PER_PAGE,
+    maxUnits: MAX_UNKNOWN_UNITS,
+  };
+}
+
 export async function lookUpLength(key: string): Promise<Length> {
   const [source, id] = key.split(":");
-  // Books with no page count on Open Library: the reader enters their pages.
-  if (source === "ol" && /^OL\d+W$/.test(id ?? "")) {
-    return { totalUnits: null, unitMinutes: MINUTES_PER_PAGE, maxUnits: MAX_UNKNOWN_UNITS };
-  }
+  if (source === "ol" && /^OL\d+W$/.test(id ?? "")) return bookLength(id);
   if (!id || !/^\d+$/.test(id)) throw new Error(`Bad key: ${key}`);
 
   switch (source) {
