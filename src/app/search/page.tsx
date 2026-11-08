@@ -5,14 +5,10 @@ import { useAuth } from "@/components/AuthProvider";
 import LogSheet from "@/components/LogSheet";
 import MediaCard from "@/components/MediaCard";
 import { getEntriesFor, type Entry } from "@/lib/entries";
-import { searchMedia, type MediaResult, type MediaType } from "@/lib/search";
+import { CATEGORIES, type MediaType } from "@/lib/categories";
+import { searchMedia, type MediaResult } from "@/lib/search";
 
-const TABS: { type: MediaType; label: string }[] = [
-  { type: "anime", label: "Anime" },
-  { type: "manga", label: "Manga" },
-  { type: "movie", label: "Movies" },
-  { type: "tv", label: "TV" },
-];
+const TABS = CATEGORIES.map((c) => ({ type: c.type, label: c.label }));
 
 export default function SearchPage() {
   const [type, setType] = useState<MediaType>("anime");
@@ -97,6 +93,12 @@ export default function SearchPage() {
           </button>
         ))}
       </div>
+
+      {(type === "movie" || type === "tv") && (
+        <p className="-mt-3 text-xs text-white/40">
+          Anime films and series are under <b className="text-white/60">Anime</b>, so they only count once.
+        </p>
+      )}
 
       {!showResults ? (
         <p className="py-16 text-center text-white/50">

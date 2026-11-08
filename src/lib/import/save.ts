@@ -29,6 +29,7 @@ export async function saveImport(userId: string, items: ImportItem[], onProgress
         progress: it.progress,
         total_units: it.media.totalUnits ?? null,
         unit_minutes: it.media.unitMinutes ?? null,
+        genres: it.media.genres ?? [],
         completed_at: it.status === "completed" && it.date ? date.slice(0, 10) : null,
         updated_at: date,
         via_import: true,

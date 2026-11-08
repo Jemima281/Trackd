@@ -30,6 +30,8 @@ export const CATEGORY_SCALE: Record<MediaType, number> = {
   anime: 0.5,
   tv: 0.5,
   manga: 0.35,
+  manhwa: 0.35,
+  book: 0.35,
   movie: 0.3,
 };
 

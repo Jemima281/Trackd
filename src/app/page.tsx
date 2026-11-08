@@ -1,12 +1,7 @@
 import Link from "next/link";
 import HomeSwitch from "@/components/HomeSwitch";
+import { CATEGORIES } from "@/lib/categories";
 
-const categories = [
-  { name: "Anime", icon: "🌸", color: "from-pink-500/30" },
-  { name: "Manga", icon: "📖", color: "from-violet-500/30" },
-  { name: "Movies", icon: "🎬", color: "from-red-500/30" },
-  { name: "TV Shows", icon: "📺", color: "from-sky-500/30" },
-];
 
 export default function Home() {
   return <HomeSwitch landing={<Landing />} />;
@@ -33,14 +28,14 @@ function Landing() {
         </Link>
       </section>
 
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {categories.map((c) => (
+      <section className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+        {CATEGORIES.map((c) => (
           <div
-            key={c.name}
-            className={`flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl border border-white/10 bg-gradient-to-b ${c.color} to-transparent`}
+            key={c.type}
+            className={`flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl border border-white/10 bg-gradient-to-b ${c.gradient} to-transparent`}
           >
             <span className="text-4xl">{c.icon}</span>
-            <span className="font-semibold">{c.name}</span>
+            <span className="font-semibold">{c.label}</span>
           </div>
         ))}
       </section>

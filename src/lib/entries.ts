@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
-import { MEDIA_TYPES, type MediaResult, type MediaType } from "@/lib/search";
+import { CATEGORY, MEDIA_TYPES, type MediaType } from "@/lib/categories";
+import type { MediaResult } from "@/lib/search";
 
 export type Status = "planning" | "in_progress" | "dropped" | "completed";
 
@@ -22,23 +23,18 @@ export type Entry = {
   total_units: number | null;
   unit_minutes: number | null;
   xp: number;
+  genres: string[];
   created_at: string;
   updated_at: string;
 };
 
-const IN_PROGRESS_LABEL: Record<MediaType, string> = {
-  anime: "Watching",
-  movie: "Watching",
-  tv: "Watching",
-  manga: "Reading",
-};
 
 export function statusLabel(status: Status, type: MediaType) {
   switch (status) {
     case "planning":
       return "Planning";
     case "in_progress":
-      return IN_PROGRESS_LABEL[type];
+      return CATEGORY[type].doing;
     case "dropped":
       return "Dropped";
     case "completed":
@@ -55,7 +51,7 @@ export const STATUS_STYLES: Record<Status, { badge: string; button: string }> = 
 
 // numeric columns can arrive as strings; normalise once here.
 function normalise(e: Entry): Entry {
-  return { ...e, rating: e.rating == null ? null : Number(e.rating) };
+  return { ...e, rating: e.rating == null ? null : Number(e.rating), genres: e.genres ?? [] };
 }
 
 export function entryToMedia(e: Entry): MediaResult {
@@ -71,6 +67,7 @@ export function entryToMedia(e: Entry): MediaResult {
     // log sheet look it up.
     totalUnits: e.unit_minutes === null ? undefined : e.total_units,
     unitMinutes: e.unit_minutes ?? undefined,
+    genres: e.genres ?? [],
   };
 }
 
@@ -128,6 +125,8 @@ export async function saveEntry(
         progress,
         total_units: media.totalUnits ?? null,
         unit_minutes: media.unitMinutes ?? null,
+        // Keep genres we already have if this source didn't send any.
+        genres: media.genres?.length ? media.genres : (previous?.genres ?? []),
         completed_at: completedAt,
         updated_at: new Date().toISOString(),
       },

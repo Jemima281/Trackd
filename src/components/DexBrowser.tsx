@@ -3,14 +3,11 @@
 import { useMemo, useState } from "react";
 import MediaCard from "@/components/MediaCard";
 import { entryToMedia, statusLabel, STATUSES, type Entry, type Status } from "@/lib/entries";
-import type { MediaType } from "@/lib/search";
+import { CATEGORIES, type MediaType } from "@/lib/categories";
 
 const TYPES: { type: MediaType | "all"; label: string }[] = [
   { type: "all", label: "All" },
-  { type: "anime", label: "Anime" },
-  { type: "manga", label: "Manga" },
-  { type: "movie", label: "Movies" },
-  { type: "tv", label: "TV" },
+  ...CATEGORIES.map((c) => ({ type: c.type, label: c.label })),
 ];
 
 function Pill({

@@ -1,5 +1,5 @@
 import type { Status } from "@/lib/entries";
-import type { MediaType } from "@/lib/search";
+import { CATEGORIES, type MediaType } from "@/lib/categories";
 import { createClient } from "@/lib/supabase/client";
 
 export type FeedItem = {
@@ -34,12 +34,13 @@ export async function getFeed(before?: string) {
   }));
 }
 
-const VERBS: Record<MediaType, { doing: string; did: string; plan: string; unit: string }> = {
-  anime: { doing: "watching", did: "watched", plan: "watch", unit: "episode" },
-  tv: { doing: "watching", did: "watched", plan: "watch", unit: "episode" },
-  movie: { doing: "watching", did: "watched", plan: "watch", unit: "" },
-  manga: { doing: "reading", did: "read", plan: "read", unit: "chapter" },
-};
+// Feed wording comes from the shared category list (singular units).
+const VERBS = Object.fromEntries(
+  CATEGORIES.map((c) => [
+    c.type,
+    { doing: c.doing.toLowerCase(), did: c.did, plan: c.plan, unit: c.unit.replace(/s$/, "") },
+  ]),
+) as Record<MediaType, { doing: string; did: string; plan: string; unit: string }>;
 
 // The verb phrase before the title, e.g. "completed", "watched 5 episodes of".
 export function describeAction(item: FeedItem) {

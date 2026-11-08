@@ -3,6 +3,8 @@
 import type { MediaResult } from "@/lib/search";
 
 export const MANGA_MINUTES_PER_CHAPTER = 5;
+// Webtoon chapters are a single scroll, usually quicker to read.
+export const MANHWA_MINUTES_PER_CHAPTER = 4;
 
 // Fields we ask AniList for on every media item.
 export const MEDIA_FIELDS = `
@@ -17,6 +19,8 @@ export const MEDIA_FIELDS = `
   title { romaji english }
   coverImage { large }
   startDate { year }
+  countryOfOrigin
+  genres
 `;
 
 export type AniListMedia = {
@@ -31,6 +35,8 @@ export type AniListMedia = {
   title: { romaji: string | null; english: string | null };
   coverImage: { large: string | null } | null;
   startDate: { year: number | null } | null;
+  countryOfOrigin?: string | null;
+  genres?: string[] | null;
 };
 
 const FORMAT_LABELS: Record<string, string> = {
@@ -50,11 +56,18 @@ function plural(n: number, word: string) {
   return `${n} ${word}${n === 1 ? "" : "s"}`;
 }
 
-export function aniListToMedia(m: AniListMedia, type: "anime" | "manga"): MediaResult {
+// AniList files manhwa (Korean comics) under MANGA; we give them their own category.
+export function aniListType(m: AniListMedia, kind: "anime" | "manga") {
+  if (kind === "anime") return "anime" as const;
+  return m.countryOfOrigin === "KR" ? ("manhwa" as const) : ("manga" as const);
+}
+
+export function aniListToMedia(m: AniListMedia, kind: "anime" | "manga"): MediaResult {
+  const type = aniListType(m, kind);
   const title = m.title.english ?? m.title.romaji ?? "Untitled";
   const alt = m.title.romaji && m.title.romaji !== title ? m.title.romaji : null;
   const count =
-    type === "anime"
+    kind === "anime"
       ? m.episodes && plural(m.episodes, "episode")
       : m.chapters
         ? plural(m.chapters, "chapter")
@@ -62,7 +75,7 @@ export function aniListToMedia(m: AniListMedia, type: "anime" | "manga"): MediaR
   const details = [m.format && FORMAT_LABELS[m.format], count].filter(Boolean).join(" · ");
   // Ongoing anime have no final episode count; use the episodes aired so far.
   const totalUnits =
-    type === "anime"
+    kind === "anime"
       ? (m.episodes ?? (m.nextAiringEpisode ? m.nextAiringEpisode.episode - 1 : null))
       : (m.chapters ?? (m.format === "ONE_SHOT" ? 1 : null));
   return {
@@ -74,7 +87,13 @@ export function aniListToMedia(m: AniListMedia, type: "anime" | "manga"): MediaR
     cover: m.coverImage?.large ?? null,
     details: details || null,
     totalUnits: totalUnits || null,
-    unitMinutes: type === "anime" ? (m.duration ?? 24) : MANGA_MINUTES_PER_CHAPTER,
+    unitMinutes:
+      type === "anime"
+        ? (m.duration ?? 24)
+        : type === "manhwa"
+          ? MANHWA_MINUTES_PER_CHAPTER
+          : MANGA_MINUTES_PER_CHAPTER,
+    genres: (m.genres ?? []).slice(0, 12),
   };
 }
 

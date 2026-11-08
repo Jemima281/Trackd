@@ -5,8 +5,8 @@ import type { Rank, Tier } from "@/lib/ranks";
 import type { MediaType } from "@/lib/search";
 
 // Rank emblems, drawn as SVG, Liftoff-style: the icon shows the category
-// (trophy for overall, katanas for anime, open manga, clapperboard for
-// movies, a TV set for TV) and the bevelled hexagon frame shows the tier,
+// (trophy for overall, katanas for anime, open manga, a webtoon phone for
+// manhwa, clapperboard for movies, a TV set for TV, a stack of books) and the bevelled hexagon frame shows the tier,
 // growing more ornate as you climb:
 //   Bronze riveted hexagon · Silver side blades + gem · Gold laurels + gem ·
 //   Platinum feathered wings · Diamond crystal wings + diamond ·
@@ -527,13 +527,53 @@ function Trophy({ p }: { p: Palette }) {
   );
 }
 
+function Webtoon({ p }: { p: Palette }) {
+  // A phone showing a vertical comic strip, the way manhwa are read.
+  return (
+    <g>
+      <rect x="78" y="66" width="44" height="76" rx="8" fill="#1d1d2b" stroke={p.deep} strokeWidth="1.8" />
+      <rect x="82" y="74" width="36" height="60" rx="2" fill="#f7f3ea" />
+      <rect x="85" y="77" width="30" height="16" rx="1.5" fill={p.light} stroke={p.dark} strokeWidth="1" />
+      <circle cx="93" cy="85" r="4" fill={p.mid} />
+      <rect x="85" y="96" width="30" height="20" rx="1.5" fill="#fff" stroke={p.dark} strokeWidth="1" />
+      <path d="M89 112 L95 102 L101 112 Z" fill={p.dark} opacity="0.8" />
+      <ellipse cx="108" cy="103" rx="5" ry="3.4" fill="#fff" stroke={p.dark} strokeWidth="0.9" />
+      <rect x="85" y="119" width="30" height="12" rx="1.5" fill={p.light} stroke={p.dark} strokeWidth="1" />
+      <rect x="94" y="69" width="12" height="2.2" rx="1.1" fill="#3a3a4a" />
+      {/* scroll arrow */}
+      <path d="M131 92 V124 M126 118 L131 125 L136 118" stroke={p.light} strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    </g>
+  );
+}
+
+function Books({ p }: { p: Palette }) {
+  // A stack of hardcovers.
+  const book = (y: number, x: number, w: number, cover: string, tilt = 0) => (
+    <g transform={`rotate(${tilt} 100 ${y + 8})`}>
+      <rect x={x} y={y} width={w} height="16" rx="2.5" fill={cover} stroke={p.deep} strokeWidth="1.5" />
+      <rect x={x + w - 9} y={y + 2.5} width="6" height="11" rx="1" fill="#f7f3ea" stroke={p.deep} strokeWidth="0.8" />
+      <path d={`M${x + 6} ${y + 5} H${x + w - 16} M${x + 6} ${y + 11} H${x + w - 22}`} stroke="#fff" strokeOpacity="0.55" strokeWidth="1.4" strokeLinecap="round" />
+    </g>
+  );
+  return (
+    <g>
+      {book(124, 66, 70, "#7c2d12")}
+      {book(108, 72, 62, p.dark, -3)}
+      {book(92, 68, 66, "#1e3a8a", 2)}
+      {book(76, 76, 54, p.mid, -4)}
+    </g>
+  );
+}
+
 // Some icons are drawn small; scale them to fill the medallion evenly.
 const ICON_SCALE: Record<MediaType | "overall", number> = {
   overall: 1.3,
   anime: 1,
   manga: 1.05,
+  manhwa: 1,
   movie: 1.05,
   tv: 1.15,
+  book: 1,
 };
 
 // The icon shows what the rank is for; the frame shows how high it is.
@@ -541,8 +581,10 @@ const ICONS: Record<MediaType | "overall", (props: { p: Palette }) => React.Reac
   overall: Trophy,
   anime: Katanas,
   manga: Manga,
+  manhwa: Webtoon,
   movie: Clapper,
   tv: Television,
+  book: Books,
 };
 
 // ---------- the emblem ----------
@@ -694,7 +736,10 @@ export default function RankBadge({
           stroke={p.deep}
           strokeWidth="2.5"
           paintOrder="stroke"
-          fontFamily="var(--font-geist-sans), Arial, sans-serif"
+          // Plain fonts as the attribute so exported images (rank cards) work;
+          // the .rank-label CSS rule switches to the app font on screen.
+          fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif"
+          className="rank-label"
         >
           {rank.division ?? "LEGEND"}
         </text>

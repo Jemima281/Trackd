@@ -3,7 +3,7 @@ import { MEDIA_TYPES, type MediaType } from "@/lib/search";
 
 export type XpByType = Record<MediaType, number>;
 
-const EMPTY: XpByType = { anime: 0, manga: 0, movie: 0, tv: 0 };
+const EMPTY = Object.fromEntries(MEDIA_TYPES.map((t) => [t, 0])) as XpByType;
 
 // A user's XP per category and total hours, added up in the database.
 export async function getStats(userId: string) {

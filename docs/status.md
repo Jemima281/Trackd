@@ -9,13 +9,18 @@ Every push to `main` goes live on Vercel within about a minute.
 ## What's built
 
 - Accounts (sign up / log in) and profiles with usernames
-- Search: anime + manga (AniList), movies + TV (TMDB)
+- Search: anime, manga, manhwa (AniList), movies + TV (TMDB), books (Open Library).
+  Japanese animation is kept out of Movies/TV so it only counts once, under Anime.
 - Logging: Planning / Watching / Dropped / Completed, 0.0–10.0 rating, progress
 - Dex: search, sort (recent, rating, title, XP, year) and rating filters
 - XP: 1 per minute spent + 50 for finishing
 - Ranks: Bronze → Legend, overall and per category, with an emblem per tier
 - Profiles: display name, bio, emoji avatar + colour, banner, top 4 favourites
 - Password reset
+- Statistics (`/u/username/stats/all` or `/stats/<category>`): heatmap, streaks, XP per
+  month, statuses, score distribution, genres, decades, highest rated, time sinks
+- Shareable rank card (story-sized image, from the Ranks page)
+- Friend groups with their own leaderboard and invite links (`/groups/...`)
 - Friends: requests, public profiles (`/u/username`), leaderboard
   (this week / all time, per category), head-to-head (`/compare/username`)
 - Activity feed on the home page
@@ -38,6 +43,7 @@ Each file in `supabase/migrations/` is pasted into Supabase → SQL Editor
 | 0007_import.sql | importing |
 | 0008_ratings_profiles.sql | removes music, 0.0–10.0 ratings, profile customisation |
 | 0009_progress_caps.sql | limits on progress for ongoing series |
+| 0010_categories_groups_stats.sql | manhwa + books, genres, groups, statistics |
 
 ## Settings outside the code
 

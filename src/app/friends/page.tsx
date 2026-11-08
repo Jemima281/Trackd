@@ -5,7 +5,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth, type Profile } from "@/components/AuthProvider";
 import Avatar from "@/components/Avatar";
 import LoadError, { describeError } from "@/components/LoadError";
-import RankBadge from "@/components/RankBadge";
+import GroupsStrip from "@/components/GroupsStrip";
+import Leaderboard from "@/components/Leaderboard";
 import {
   acceptRequest,
   findUsers,
@@ -14,39 +15,8 @@ import {
   sendRequest,
   type Connection,
 } from "@/lib/friends";
-import { CATEGORY_SCALE, rankFor } from "@/lib/ranks";
-import type { MediaType } from "@/lib/search";
 import { shownName } from "@/lib/profile";
-import { getLeaderboard, type LeaderboardRow, type Period } from "@/lib/stats";
-
-const CATEGORIES: { type: MediaType | null; label: string }[] = [
-  { type: null, label: "Everything" },
-  { type: "anime", label: "Anime" },
-  { type: "manga", label: "Manga" },
-  { type: "movie", label: "Movies" },
-  { type: "tv", label: "TV" },
-];
-
-function Toggle({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition ${
-        active ? "bg-amber-400 text-black" : "border border-white/15 text-white/70 hover:bg-white/10"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
+import { getLeaderboard } from "@/lib/stats";
 
 function SmallButton({
   onClick,
@@ -89,70 +59,10 @@ function PersonRow({ profile, children }: { profile: Profile; children?: React.R
   );
 }
 
-const MEDALS = ["🥇", "🥈", "🥉"];
-
-function LeaderboardItem({
-  place,
-  row,
-  isMe,
-  scale,
-  category,
-  busy,
-  onRemove,
-}: {
-  place: number;
-  row: LeaderboardRow;
-  isMe: boolean;
-  scale: number | null; // null hides the rank badge
-  category: MediaType | null;
-  busy: boolean;
-  onRemove?: () => void;
-}) {
-  return (
-    <div
-      className={`flex items-center gap-3 rounded-2xl border px-4 py-3 ${
-        isMe ? "border-amber-400/40 bg-amber-400/[0.06]" : "border-white/10 bg-white/[0.03]"
-      }`}
-    >
-      {row.xp > 0 && place <= 3 ? (
-        <span className="w-6 text-center text-xl">{MEDALS[place - 1]}</span>
-      ) : (
-        <span className="w-6 text-center font-black text-white/40">{place}</span>
-      )}
-      <Link href={`/u/${row.username}`} className="flex min-w-0 flex-1 items-center gap-3">
-        <Avatar username={row.username} emoji={row.avatar_emoji} color={row.avatar_color} />
-        <div className="min-w-0">
-          <p className="truncate font-semibold hover:underline">
-            {shownName(row)} {isMe && <span className="text-white/40">(you)</span>}
-          </p>
-          <p className="text-xs font-bold text-amber-400">{row.xp.toLocaleString()} XP</p>
-        </div>
-      </Link>
-      {scale !== null && (
-        <RankBadge rank={rankFor(row.xp, scale)} category={category ?? undefined} size="sm" />
-      )}
-      {onRemove && (
-        <button
-          title="Remove friend"
-          disabled={busy}
-          onClick={onRemove}
-          className="px-1 text-white/30 hover:text-red-300"
-        >
-          ✕
-        </button>
-      )}
-    </div>
-  );
-}
-
 export default function FriendsPage() {
   const { user, loading } = useAuth();
   const [connections, setConnections] = useState<Connection[] | null>(null);
-  const [period, setPeriod] = useState<Period>("week");
-  const [category, setCategory] = useState<MediaType | null>(null);
-  const [board, setBoard] = useState<LeaderboardRow[] | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
-  const [boardError, setBoardError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const [query, setQuery] = useState("");
@@ -171,22 +81,6 @@ export default function FriendsPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- loads data from Supabase
     reload();
   }, [reload]);
-
-  // Reload the leaderboard when the filters or friends list change.
-  useEffect(() => {
-    if (!user || !connections) return;
-    let cancelled = false;
-    getLeaderboard(period, category)
-      .then((rows) => {
-        if (cancelled) return;
-        setBoard(rows);
-        setBoardError(null);
-      })
-      .catch((err) => !cancelled && setBoardError(describeError(err)));
-    return () => {
-      cancelled = true;
-    };
-  }, [user, connections, period, category]);
 
   // Search usernames as you type.
   useEffect(() => {
@@ -243,9 +137,6 @@ export default function FriendsPage() {
   const received = connections.filter((c) => c.relation === "received");
   const sent = connections.filter((c) => c.relation === "sent");
   const friends = connections.filter((c) => c.relation === "friends");
-
-  // Badges show all-time rank (in the chosen category); weekly XP isn't a rank.
-  const scale = category ? CATEGORY_SCALE[category] : 1;
 
   const searching = query.trim().replace(/^@/, "").length >= 2;
 
@@ -319,71 +210,35 @@ export default function FriendsPage() {
         </section>
       )}
 
-      <section className="flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-xl font-black">Leaderboard</h2>
-          <div className="flex gap-1 rounded-full border border-white/10 p-1">
-            {(["week", "all"] as const).map((p) => (
-              <button
-                key={p}
-                onClick={() => setPeriod(p)}
-                className={`rounded-full px-3 py-1 text-xs font-bold transition ${
-                  period === p ? "bg-white text-black" : "text-white/60 hover:text-white"
-                }`}
-              >
-                {p === "week" ? "This week" : "All time"}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4">
-          {CATEGORIES.map((c) => (
-            <Toggle key={c.label} active={category === c.type} onClick={() => setCategory(c.type)}>
-              {c.label}
-            </Toggle>
-          ))}
-        </div>
-        {period === "week" && (
-          <p className="text-xs text-white/40">XP earned since Monday. Resets every week.</p>
-        )}
+      <GroupsStrip />
 
-        {boardError ? (
-          <p className="break-words rounded-xl bg-white/5 px-4 py-3 text-center font-mono text-xs text-red-300/80">
-            Couldn&apos;t load the leaderboard: {boardError}
-          </p>
-        ) : !board ? (
-          <p className="py-8 text-center text-white/50">Loading…</p>
-        ) : (
-          board.map((row, i) => {
-            const isMe = row.user_id === user.id;
-            const friend = friends.find((f) => f.profile.id === row.user_id);
-            return (
-              <LeaderboardItem
-                key={row.user_id}
-                place={i + 1}
-                row={row}
-                isMe={isMe}
-                scale={period === "all" ? scale : null}
-                category={category}
-                busy={busyId === row.user_id}
-                onRemove={
-                  friend
-                    ? () =>
-                        confirm(`Remove @${row.username} from your friends?`) &&
-                        act(row.user_id, () => removeConnection(row.user_id, user.id))
-                    : undefined
-                }
-              />
-            );
-          })
-        )}
-
-        {friends.length === 0 && (
-          <p className="rounded-2xl border border-dashed border-white/15 px-4 py-8 text-center text-white/50">
-            It&apos;s lonely up here. Search for someone&apos;s @username above to add them.
-          </p>
-        )}
-      </section>
+      <Leaderboard
+        load={getLeaderboard}
+        reloadKey={connections}
+        meId={user.id}
+        rowAction={(row) =>
+          friends.some((f) => f.profile.id === row.user_id) && (
+            <button
+              title="Remove friend"
+              disabled={busyId === row.user_id}
+              onClick={() =>
+                confirm(`Remove @${row.username} from your friends?`) &&
+                act(row.user_id, () => removeConnection(row.user_id, user.id))
+              }
+              className="px-1 text-white/30 hover:text-red-300"
+            >
+              ✕
+            </button>
+          )
+        }
+        empty={
+          friends.length === 0 && (
+            <p className="rounded-2xl border border-dashed border-white/15 px-4 py-8 text-center text-white/50">
+              It&apos;s lonely up here. Search for someone&apos;s @username above to add them.
+            </p>
+          )
+        }
+      />
 
       {sent.length > 0 && (
         <section className="flex flex-col gap-3">

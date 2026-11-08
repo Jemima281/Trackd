@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { statusLabel, STATUS_STYLES, type Entry } from "@/lib/entries";
 import { formatRating } from "@/lib/rating";
+import { CATEGORY } from "@/lib/categories";
 import type { MediaResult } from "@/lib/search";
 
-const ICONS = { anime: "🌸", manga: "📖", movie: "🎬", tv: "📺" };
 
 export default function MediaCard({
   item,
@@ -35,7 +35,7 @@ export default function MediaCard({
           />
         ) : (
           <div className="flex h-full items-center justify-center text-4xl opacity-40">
-            {ICONS[item.type]}
+            {CATEGORY[item.type].icon}
           </div>
         )}
         {entry && (

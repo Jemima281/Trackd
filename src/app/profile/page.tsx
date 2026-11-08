@@ -311,6 +311,12 @@ export default function ProfilePage() {
           />
           View my public profile
         </Link>
+        <Link
+          href={`/u/${profile.username}/stats/all`}
+          className="rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold hover:bg-white/10"
+        >
+          📊 My stats
+        </Link>
         <button
           onClick={showInstallPrompt}
           className="rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold hover:bg-white/10"

@@ -7,3 +7,9 @@ Things to come back to once the main features are in.
       from the `xp_by_type` database function.
 - [ ] The Dex grid itself still loads at most 1000 entries; add paging.
 - [ ] Music (albums) was removed for the first launch; maybe bring it back later.
+- [ ] Genres only exist for things logged after the stats update; older entries show
+      none until re-saved. Could backfill from AniList/TMDB.
+- [ ] Korean titles logged as "manga" before manhwa existed stay under manga;
+      re-log or move them.
+- [ ] Anime films logged under Movies before the duplicate fix still count twice
+      if also logged under Anime; delete one copy.

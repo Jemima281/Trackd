@@ -186,7 +186,7 @@ export default function UserProfile({ params }: { params: Promise<{ username: st
         </section>
       )}
 
-      <RankOverview byType={byType} title="Rank" />
+      <RankOverview byType={byType} username={profile.username} title="Rank" />
 
       <section className="flex flex-col gap-4">
         <h2 className="text-xl font-black">{isMe ? "Your Dex" : `${shownName(profile)}'s Dex`}</h2>

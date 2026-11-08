@@ -13,6 +13,7 @@ import {
   type Status,
 } from "@/lib/entries";
 import RatingPicker from "@/components/RatingPicker";
+import { CATEGORY } from "@/lib/categories";
 import type { MediaResult } from "@/lib/search";
 import { MAX_UNKNOWN_UNITS, UNIT_NAMES, xpFor } from "@/lib/xp";
 
@@ -209,7 +210,7 @@ export default function LogSheet({
             {!isMovie && !needsLength && !total && (
               <p className="-mt-3 text-xs text-white/40">
                 Still running, so there&apos;s no official count. Enter how many{" "}
-                {UNIT_NAMES[media.type]} you&apos;ve {media.type === "manga" ? "read" : "watched"}{" "}
+                {UNIT_NAMES[media.type]} you&apos;ve {CATEGORY[media.type].did}{" "}
                 (up to {limit.toLocaleString()}).
               </p>
             )}

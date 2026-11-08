@@ -12,19 +12,12 @@ import { getProfileByUsername } from "@/lib/friends";
 import { CATEGORY_SCALE, rankFor, TIER_STYLES } from "@/lib/ranks";
 import { shownName } from "@/lib/profile";
 import { formatRating } from "@/lib/rating";
-import type { MediaType } from "@/lib/search";
+import { CATEGORIES } from "@/lib/categories";
 import { getStats, type XpByType } from "@/lib/stats";
 
 type Side = { profile: Profile; entries: Entry[]; byType: XpByType; xp: number };
 
 type Loaded = { me: Side; them: Side } | "missing" | { error: string } | null;
-
-const CATEGORIES: { type: MediaType; label: string; icon: string }[] = [
-  { type: "anime", label: "Anime", icon: "🌸" },
-  { type: "manga", label: "Manga", icon: "📖" },
-  { type: "movie", label: "Movies", icon: "🎬" },
-  { type: "tv", label: "TV", icon: "📺" },
-];
 
 async function loadSide(profile: Profile): Promise<Side> {
   const [entries, stats] = await Promise.all([listEntries(profile.id), getStats(profile.id)]);

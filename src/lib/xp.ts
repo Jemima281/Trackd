@@ -1,5 +1,5 @@
 import type { Status } from "@/lib/entries";
-import type { MediaType } from "@/lib/search";
+import { CATEGORIES, type MediaType } from "@/lib/categories";
 
 // XP = 1 per minute spent, plus a bonus for finishing.
 // Keep in sync with the generated `xp` column in supabase/migrations/0003_xp.sql.
@@ -20,12 +20,9 @@ export function capFromStartYear(startYear: number | null | undefined) {
   return Math.min(MAX_UNKNOWN_UNITS, Math.max(12, years * 60));
 }
 
-export const UNIT_NAMES: Record<MediaType, string> = {
-  anime: "episodes",
-  tv: "episodes",
-  manga: "chapters",
-  movie: "movie",
-};
+export const UNIT_NAMES: Record<MediaType, string> = Object.fromEntries(
+  CATEGORIES.map((c) => [c.type, c.unit || "movie"]),
+) as Record<MediaType, string>;
 
 export function totals(entries: { xp: number; progress: number; unit_minutes: number | null }[]) {
   let xp = 0;

@@ -4,12 +4,13 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import LoadError, { describeError } from "@/components/LoadError";
+import RankLadder from "@/components/RankLadder";
 import RankOverview from "@/components/RankOverview";
-import { LADDER_XP, rankFor, TIER_STYLES } from "@/lib/ranks";
+import ShareRankCard from "@/components/ShareRankCard";
 import { getStats } from "@/lib/stats";
 
 export default function RanksPage() {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   const [stats, setStats] = useState<Awaited<ReturnType<typeof getStats>> | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
 
@@ -46,32 +47,20 @@ export default function RanksPage() {
     return <LoadError what="your ranks" detail={failed ?? ""} />;
   }
 
-  const rank = rankFor(stats.xp);
-
   return (
     <div className="flex flex-col gap-8 py-8">
       <h1 className="sr-only">Ranks</h1>
-      <RankOverview byType={stats.byType} />
+      <RankOverview
+        byType={stats.byType}
+        username={profile?.username}
+        actions={profile && <ShareRankCard profile={profile} byType={stats.byType} hours={stats.hours} />}
+      />
 
       <section className="flex flex-col gap-3">
         <h2 className="text-xl font-black">The ladder</h2>
-        <div className="overflow-hidden rounded-2xl border border-white/10">
-          {LADDER_XP.map(([tier, starts]) => (
-            <div
-              key={tier}
-              className={`flex items-center justify-between gap-4 border-b border-white/5 px-4 py-3 last:border-0 ${
-                tier === rank.tier ? "bg-white/[0.06]" : ""
-              }`}
-            >
-              <span className={`font-bold ${TIER_STYLES[tier].text}`}>{tier}</span>
-              <span className="text-right text-sm tabular-nums text-white/60">
-                {starts.map((xp) => xp.toLocaleString()).join(" · ")} XP
-              </span>
-            </div>
-          ))}
-        </div>
+        <RankLadder xp={stats.xp} />
         <p className="text-xs text-white/40">
-          Overall rank. Category ranks use a shorter ladder.
+          Overall rank. Category ranks use a shorter ladder; Legend in one category takes far fewer XP.
         </p>
       </section>
     </div>

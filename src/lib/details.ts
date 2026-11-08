@@ -2,8 +2,9 @@
 // their search results don't include it. For AniList it fills in ongoing
 // series, which have no official episode/chapter count. Runs on our server.
 
-import { MANGA_MINUTES_PER_CHAPTER } from "@/lib/anilist";
-import { capFromStartYear } from "@/lib/xp";
+import { MANGA_MINUTES_PER_CHAPTER, MANHWA_MINUTES_PER_CHAPTER } from "@/lib/anilist";
+import { MINUTES_PER_PAGE } from "@/lib/books";
+import { capFromStartYear, MAX_UNKNOWN_UNITS } from "@/lib/xp";
 
 export type Length = {
   totalUnits: number | null;
@@ -54,6 +55,10 @@ async function tmdb(path: string) {
 
 export async function lookUpLength(key: string): Promise<Length> {
   const [source, id] = key.split(":");
+  // Books with no page count on Open Library: the reader enters their pages.
+  if (source === "ol" && /^OL\d+W$/.test(id ?? "")) {
+    return { totalUnits: null, unitMinutes: MINUTES_PER_PAGE, maxUnits: MAX_UNKNOWN_UNITS };
+  }
   if (!id || !/^\d+$/.test(id)) throw new Error(`Bad key: ${key}`);
 
   switch (source) {
@@ -74,7 +79,7 @@ export async function lookUpLength(key: string): Promise<Length> {
         body: JSON.stringify({
           query: `query ($id: Int) { Media(id: $id) {
             type format episodes duration chapters nextAiringEpisode { episode }
-            title { romaji english } startDate { year }
+            title { romaji english } startDate { year } countryOfOrigin
           } }`,
           variables: { id: Number(id) },
         }),
@@ -95,7 +100,9 @@ export async function lookUpLength(key: string): Promise<Length> {
           return null;
         });
       }
-      return { totalUnits: total, unitMinutes: MANGA_MINUTES_PER_CHAPTER, maxUnits };
+      const minutes =
+        m.countryOfOrigin === "KR" ? MANHWA_MINUTES_PER_CHAPTER : MANGA_MINUTES_PER_CHAPTER;
+      return { totalUnits: total, unitMinutes: minutes, maxUnits };
     }
     default:
       throw new Error(`No length lookup for ${source}`);

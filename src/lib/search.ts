@@ -2,9 +2,10 @@
 // Every source is normalised into the same MediaResult shape.
 
 import { aniListQuery, aniListToMedia, MEDIA_FIELDS, type AniListMedia } from "@/lib/anilist";
+import { searchBooks } from "@/lib/books";
 
-export const MEDIA_TYPES = ["anime", "manga", "movie", "tv"] as const;
-export type MediaType = (typeof MEDIA_TYPES)[number];
+import type { MediaType } from "@/lib/categories";
+export { MEDIA_TYPES, type MediaType } from "@/lib/categories";
 
 export type MediaResult = {
   key: string; // unique across sources, e.g. "anilist:21"
@@ -16,25 +17,33 @@ export type MediaResult = {
   details: string | null; // e.g. "TV · 24 episodes"
   // Length, used for XP. Undefined means "not looked up yet" (see /api/details);
   // null means the source doesn't know (e.g. an ongoing manga).
-  totalUnits?: number | null; // episodes, chapters, or 1 for a movie
-  unitMinutes?: number | null; // average minutes per episode/chapter
+  totalUnits?: number | null; // episodes, chapters, pages, or 1 for a movie
+  unitMinutes?: number | null; // average minutes per episode/chapter/page
+  genres?: string[];
 };
 
 const SEARCH_QUERY = `
-query ($search: String, $type: MediaType) {
-  Page(perPage: 24) {
-    media(search: $search, type: $type, isAdult: false, sort: [SEARCH_MATCH, POPULARITY_DESC]) {
+query ($search: String, $type: MediaType, $country: CountryCode) {
+  Page(perPage: 30) {
+    media(search: $search, type: $type, countryOfOrigin: $country, isAdult: false, sort: [SEARCH_MATCH, POPULARITY_DESC]) {
       ${MEDIA_FIELDS}
     }
   }
 }`;
 
-async function searchAniList(query: string, type: "anime" | "manga") {
+// Anime, manga and manhwa all come from AniList. Manhwa are Korean comics,
+// which AniList files under manga, so each tab filters by country.
+async function searchAniList(query: string, type: "anime" | "manga" | "manhwa") {
+  const kind = type === "anime" ? "anime" : "manga";
   const data = await aniListQuery<{ Page: { media: AniListMedia[] } }>(SEARCH_QUERY, {
     search: query,
-    type: type === "anime" ? "ANIME" : "MANGA",
+    type: kind === "anime" ? "ANIME" : "MANGA",
+    country: type === "manhwa" ? "KR" : null,
   });
-  return data.Page.media.map((m) => aniListToMedia(m, type));
+  return data.Page.media
+    .map((m) => aniListToMedia(m, kind))
+    .filter((r) => r.type === type)
+    .slice(0, 24);
 }
 
 // Movies and TV go through our own /api/tmdb route; see src/lib/tmdb.ts.
@@ -45,13 +54,16 @@ async function searchMoviesAndTv(query: string, type: "movie" | "tv") {
   return json.results;
 }
 
-export async function searchMedia(type: MediaType, query: string) {
+export async function searchMedia(type: MediaType, query: string): Promise<MediaResult[]> {
   switch (type) {
     case "anime":
     case "manga":
+    case "manhwa":
       return searchAniList(query, type);
     case "movie":
     case "tv":
       return searchMoviesAndTv(query, type);
+    case "book":
+      return searchBooks(query);
   }
 }
