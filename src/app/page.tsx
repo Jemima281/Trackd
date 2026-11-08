@@ -2,7 +2,6 @@ import Link from "next/link";
 import HomeSwitch from "@/components/HomeSwitch";
 import { CATEGORIES } from "@/lib/categories";
 
-
 export default function Home() {
   return <HomeSwitch landing={<Landing />} />;
 }
@@ -39,6 +38,15 @@ function Landing() {
           </div>
         ))}
       </section>
+
+      <footer className="flex flex-col items-center gap-3 text-xs text-white/35">
+        <nav className="flex gap-5">
+          <Link href="/about" className="hover:text-white">About</Link>
+          <Link href="/privacy" className="hover:text-white">Privacy</Link>
+          <Link href="/terms" className="hover:text-white">Terms</Link>
+        </nav>
+        <p>Movie &amp; TV data from TMDB. This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
+      </footer>
     </div>
   );
 }

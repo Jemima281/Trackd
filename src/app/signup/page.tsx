@@ -107,6 +107,11 @@ export default function SignUpPage() {
         />
         {error && <Message kind="error">{error}</Message>}
         <SubmitButton busy={busy}>Create account</SubmitButton>
+        <p className="text-center text-xs text-white/40">
+          By signing up you agree to the{" "}
+          <Link href="/terms" className="underline hover:text-white">terms</Link> and{" "}
+          <Link href="/privacy" className="underline hover:text-white">privacy policy</Link>.
+        </p>
       </form>
       <p className="text-center text-sm text-white/60">
         Already have an account?{" "}

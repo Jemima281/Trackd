@@ -360,6 +360,11 @@ export default function ProfilePage() {
         <button onClick={signOut} className="mt-4 self-center py-2 text-sm text-white/50 hover:text-red-300">
           Log out
         </button>
+        <nav className="flex justify-center gap-5 text-xs text-white/35">
+          <Link href="/about" className="hover:text-white">About</Link>
+          <Link href="/privacy" className="hover:text-white">Privacy</Link>
+          <Link href="/terms" className="hover:text-white">Terms</Link>
+        </nav>
       </section>
 
       {/* Save bar: only while there are unsaved changes, above the tab bar. */}
