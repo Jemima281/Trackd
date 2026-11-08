@@ -1,8 +1,9 @@
 # Shuin status
 
-Formerly "Trackd". The code repository and Vercel address still use the old name.
+Formerly "Trackd". The GitHub repository and Vercel project still use the old name.
 
-**Live app:** https://trackd-two-wheat.vercel.app
+**Live app:** https://shuin.io (domain from Cloudflare, DNS-only CNAMEs to Vercel;
+`www.shuin.io` redirects to it). The old https://trackd-two-wheat.vercel.app still works.
 Every push to `main` goes live on Vercel within about a minute.
 
 ## What's built
@@ -41,7 +42,8 @@ Each file in `supabase/migrations/` is pasted into Supabase → SQL Editor
 ## Settings outside the code
 
 - **Vercel → Environment Variables:** `TMDB_READ_TOKEN` (movie/TV search)
-- **Supabase → Authentication → URL Configuration:** Site URL is the live app
+- **Supabase → Authentication → URL Configuration:** Site URL is https://shuin.io; redirect
+  URLs include both shuin.io and the old Vercel address
 - **Supabase → Authentication → Email:** "Confirm email" off while testing
 
 ## If pages say "Loading…" forever

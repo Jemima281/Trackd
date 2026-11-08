@@ -16,7 +16,7 @@ export type Length = {
 // Latest chapter number for an ongoing manga, from MangaDex (which links its
 // entries to AniList ids). Null if MangaDex doesn't have it.
 async function mangaDexLatestChapter(aniListId: string, titles: string[]) {
-  const headers = { "User-Agent": "Shuin/1.0 (https://trackd-two-wheat.vercel.app)" };
+  const headers = { "User-Agent": "Shuin/1.0 (https://shuin.io)" };
   for (const title of titles) {
     const params = new URLSearchParams({ title, limit: "10" });
     for (const r of ["safe", "suggestive", "erotica"]) params.append("contentRating[]", r);

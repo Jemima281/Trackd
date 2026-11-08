@@ -135,7 +135,7 @@ export default function InstallPrompt() {
           ✕
         </button>
         You&apos;re already using the app, or you&apos;re on a computer. Open{" "}
-        <b className="text-white">trackd-two-wheat.vercel.app</b> on your phone to install it.
+        <b className="text-white">shuin.io</b> on your phone to install it.
       </div>
     );
   }
