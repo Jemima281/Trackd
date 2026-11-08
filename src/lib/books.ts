@@ -60,7 +60,7 @@ const LANGUAGES: Record<string, string> = {
 };
 
 function words(text: string) {
-  return text.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").split(/[^a-z0-9]+/).filter(Boolean);
+  return text.toLowerCase().replace(/&/g, " and ").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").split(/[^a-z0-9]+/).filter(Boolean);
 }
 
 // Open Library's search mixes the real book with spin-offs, translations
@@ -144,7 +144,7 @@ export function fromOpenLibrary(docs: OpenLibraryDoc[]): MediaResult[] {
         title: d.title.replace(/\s+/g, " ").trim(),
         subtitle: d.author_name?.slice(0, 2).join(", ") ?? null,
         year: d.first_publish_year ?? null,
-        cover: d.cover_i ? `https://covers.openlibrary.org/b/id/${d.cover_i}-M.jpg` : null,
+        cover: d.cover_i ? `https://covers.openlibrary.org/b/id/${d.cover_i}-L.jpg` : null,
         details: pages ? `${pages} pages · ${readingTime(pages, minutes)}` : "Book",
         totalUnits: pages && pages > 0 ? pages : null,
         unitMinutes: minutes,
@@ -201,6 +201,36 @@ async function authorNamesIn(lang: string, docs: OpenLibraryDoc[]) {
   return names;
 }
 
+// Apple Books has the current, publisher-made cover for most books, where
+// Open Library's are often scans of an old edition. One search per query;
+// each book takes the first Apple result with the same title and author.
+type AppleBook = { trackName?: string; artistName?: string; artworkUrl100?: string };
+
+async function appleBooks(query: string): Promise<AppleBook[]> {
+  try {
+    const params = new URLSearchParams({ term: query, media: "ebook", entity: "ebook", limit: "50" });
+    const res = await fetch(`https://itunes.apple.com/search?${params}`, { signal: AbortSignal.timeout(4000) });
+    if (!res.ok) return [];
+    return (await res.json()).results ?? [];
+  } catch {
+    return [];
+  }
+}
+
+function appleCover(d: OpenLibraryDoc, apple: AppleBook[]) {
+  const title = words(d.title).join(" ");
+  const surnames = (d.author_name ?? []).map((n) => words(n).at(-1)).filter(Boolean) as string[];
+  const found = apple.find((a) => {
+    // "Harry Potter and the Sorcerer's Stone (Enhanced Edition)"
+    const name = (a.trackName ?? "").replace(/\s*[([][^)\]]*[)\]]\s*/g, " ");
+    const same = words(name).join(" ") === title || words(name.split(":")[0]).join(" ") === title;
+    const by = words(a.artistName ?? "");
+    return same && surnames.some((s) => by.includes(s)) && a.artworkUrl100;
+  });
+  // The artwork URL ends in the size; ask for a sharp one.
+  return found?.artworkUrl100?.replace(/\/\d+x\d+bb\./, "/600x600bb.") ?? null;
+}
+
 export async function searchBooks(query: string) {
   const lang = (typeof navigator !== "undefined" && navigator.language?.slice(0, 2).toLowerCase()) || "en";
   const params = new URLSearchParams({
@@ -213,16 +243,19 @@ export async function searchBooks(query: string) {
       "editions,editions.key,editions.title,editions.language,editions.cover_i",
     ].join(","),
   });
+  const applePending = appleBooks(query);
   const res = await fetch(`https://openlibrary.org/search.json?${params}`);
   if (!res.ok) throw new Error(`Open Library returned ${res.status}`);
-  const json = await res.json();
+  const [json, apple] = await Promise.all([res.json(), applePending]);
   const docs = ((json.docs ?? []) as OpenLibraryDoc[]).map((d) => inReaderLanguage(d, LANGUAGES[lang]));
   const kept = cleanResults(docs, query, lang).slice(0, 24);
   const names = await authorNamesIn(lang, kept);
-  return fromOpenLibrary(
-    kept.map((d) => {
-      const name = d.author_key?.[0] && names.get(d.author_key[0]);
-      return name ? { ...d, author_name: [name, ...(d.author_name ?? []).slice(1)] } : d;
-    }),
-  );
+  const withNames = kept.map((d) => {
+    const name = d.author_key?.[0] && names.get(d.author_key[0]);
+    return name ? { ...d, author_name: [name, ...(d.author_name ?? []).slice(1)] } : d;
+  });
+  return fromOpenLibrary(withNames).map((book, i) => {
+    const cover = appleCover(withNames[i], apple);
+    return cover ? { ...book, cover } : book;
+  });
 }
