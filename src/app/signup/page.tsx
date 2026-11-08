@@ -77,7 +77,7 @@ export default function SignUpPage() {
   }
 
   return (
-    <AuthCard title="Join Trackd">
+    <AuthCard title="Join Shuin">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Field
           label="Username"

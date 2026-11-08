@@ -70,7 +70,11 @@ export default function Nav() {
       <header className="sticky top-0 z-10 border-b border-white/10 bg-background/80 pt-[env(safe-area-inset-top)] backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
           <Link href="/" className="text-xl font-black tracking-tight">
-            track<span className="text-amber-400">d</span>
+            {/* A tiny vermilion seal, like the stamps the app is named after. */}
+            <span className="mr-1.5 inline-flex h-6 w-6 -translate-y-0.5 items-center justify-center rounded-[5px] bg-[#d63027] text-[13px] font-black leading-none text-[#fff6ec] ring-1 ring-inset ring-[#fff6ec]/40">
+              朱
+            </span>
+            shuin
           </Link>
           <nav className="hidden gap-1 sm:flex">
             <WithPathname Links={TopLinks} />

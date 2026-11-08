@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 
-// Shown on phones that haven't installed Trackd to the home screen yet,
+// Shown on phones that haven't installed Shuin to the home screen yet,
 // with the steps for their browser. Dismissing hides it for 30 days; the
 // account page can bring it back with showInstallPrompt().
 
 type Platform = "ios" | "android" | "in-app";
 
-const DISMISS_KEY = "trackd-install-dismissed";
-const SHOW_EVENT = "trackd:show-install";
+const DISMISS_KEY = "shuin-install-dismissed";
+const SHOW_EVENT = "shuin:show-install";
 const HIDE_DAYS = 30;
 
 // Chrome's install prompt event (not in TypeScript's DOM types).
@@ -17,7 +17,7 @@ type InstallEvent = Event & { prompt: () => Promise<void> };
 
 // Chrome can announce installability before React has rendered, so catch
 // the event as soon as this module loads and hand it over later.
-const INSTALLABLE_EVENT = "trackd:installable";
+const INSTALLABLE_EVENT = "shuin:installable";
 let deferredInstall: InstallEvent | null = null;
 if (typeof window !== "undefined") {
   window.addEventListener("beforeinstallprompt", (e) => {
@@ -143,7 +143,7 @@ export default function InstallPrompt() {
   return (
     <div
       role="dialog"
-      aria-label="Install Trackd"
+      aria-label="Install Shuin"
       className="fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 mx-auto max-w-md rounded-2xl border border-amber-400/30 bg-[#17171f] p-4 shadow-2xl shadow-black"
     >
       <button onClick={dismiss} aria-label="Not now" className="absolute right-3 top-2 p-1 text-lg text-white/40 hover:text-white">
@@ -153,7 +153,7 @@ export default function InstallPrompt() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/icon-192.png" alt="" className="h-12 w-12 shrink-0 rounded-xl" />
         <div className="min-w-0 pr-5">
-          <p className="font-bold">Get the Trackd app</p>
+          <p className="font-bold">Get the Shuin app</p>
           <p className="text-xs text-white/50">Full screen, on your home screen. Free, no app store.</p>
         </div>
       </div>

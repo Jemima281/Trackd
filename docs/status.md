@@ -1,4 +1,6 @@
-# Trackd status
+# Shuin status
+
+Formerly "Trackd". The code repository and Vercel address still use the old name.
 
 **Live app:** https://trackd-two-wheat.vercel.app
 Every push to `main` goes live on Vercel within about a minute.

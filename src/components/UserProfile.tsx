@@ -82,7 +82,7 @@ export default function UserProfile({ params }: { params: Promise<{ username: st
   async function share() {
     const url = window.location.href;
     try {
-      if (navigator.share) await navigator.share({ title: `@${username} on Trackd`, url });
+      if (navigator.share) await navigator.share({ title: `@${username} on Shuin`, url });
       else {
         await navigator.clipboard.writeText(url);
         setCopied(true);

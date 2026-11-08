@@ -1,10 +1,10 @@
 import type { MetadataRoute } from "next";
 
-// Lets people install Trackd to their home screen as an app.
+// Lets people install Shuin to their home screen as an app.
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Trackd",
-    short_name: "Trackd",
+    name: "Shuin",
+    short_name: "Shuin",
     description: "Collect, rank and compete on the media you consume.",
     start_url: "/",
     display: "standalone",

@@ -34,7 +34,7 @@ export default function ForgotPasswordPage() {
     return (
       <AuthCard title="Check your email">
         <Message kind="success">
-          If <strong>{email}</strong> has a Trackd account, we&apos;ve sent it a link to reset your
+          If <strong>{email}</strong> has a Shuin account, we&apos;ve sent it a link to reset your
           password. Open it on this device, in this browser. Check spam if it doesn&apos;t show up.
         </Message>
         <Link href="/login" className="text-center text-amber-400 hover:underline">

@@ -16,10 +16,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Trackd",
+  title: "Shuin",
   description: "Collect, rank and compete on the media you consume.",
   // When installed to an iPhone home screen: full screen, dark status bar.
-  appleWebApp: { title: "Trackd", statusBarStyle: "black-translucent" },
+  appleWebApp: { title: "Shuin", statusBarStyle: "black-translucent" },
 };
 
 export const viewport: Viewport = {
