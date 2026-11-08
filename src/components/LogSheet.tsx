@@ -43,25 +43,35 @@ export default function LogSheet({
   // Movies and TV don't include their length in search results, and ongoing
   // series have no official total, so look those up when the sheet opens.
   const [length, setLength] = useState<
-    Pick<MediaResult, "totalUnits" | "unitMinutes"> & { maxUnits?: number }
+    Pick<MediaResult, "totalUnits" | "unitMinutes"> & { maxUnits?: number; ongoing?: boolean }
   >({ totalUnits: media.totalUnits, unitMinutes: media.unitMinutes });
+  // Manga keep getting new chapters, so a saved chapter count can be out of
+  // date: check again every time (the server caches it for a day).
+  const [checkedComic, setCheckedComic] = useState(false);
+  const isComic = media.key.startsWith("anilist:") && (media.type === "manga" || media.type === "manhwa");
   const needsLength =
     length.unitMinutes === undefined ||
+    (isComic && !checkedComic) ||
     (!isMovie && length.totalUnits == null && length.maxUnits === undefined);
   useEffect(() => {
     if (!needsLength) return;
     let cancelled = false;
     fetch(`/api/details?key=${encodeURIComponent(media.key)}`)
       .then((res) => (res.ok ? res.json() : Promise.reject()))
-      .then((found) => !cancelled && setLength(found))
+      .then((found) => {
+        if (cancelled) return;
+        setCheckedComic(true);
+        setLength(found);
+      })
       .catch(
         () =>
           !cancelled &&
+          (setCheckedComic(true),
           setLength((prev) => ({
             totalUnits: prev.totalUnits ?? null,
             unitMinutes: prev.unitMinutes ?? null,
-            maxUnits: MAX_UNKNOWN_UNITS,
-          })),
+            maxUnits: prev.maxUnits ?? MAX_UNKNOWN_UNITS,
+          }))),
       );
     return () => {
       cancelled = true;
@@ -70,7 +80,10 @@ export default function LogSheet({
 
   const total = length.totalUnits ?? null;
   // Highest progress allowed: the real total, or a safe cap for ongoing series.
-  const limit = total ?? length.maxUnits ?? MAX_UNKNOWN_UNITS;
+  // An ongoing series' count is "so far", so allow going a little past it.
+  const limit = length.ongoing
+    ? Math.max(total ?? 0, length.maxUnits ?? MAX_UNKNOWN_UNITS)
+    : (total ?? length.maxUnits ?? MAX_UNKNOWN_UNITS);
   // Completed with a known total means all of it, even if the total arrived
   // after "Completed" was tapped.
   const allDone = status === "completed" && !!total;

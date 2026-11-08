@@ -22,28 +22,34 @@ export type MediaResult = {
   genres?: string[];
 };
 
-const SEARCH_QUERY = `
-query ($search: String, $type: MediaType, $country: CountryCode) {
+// AniList returns nothing at all if countryOfOrigin is sent as null, so the
+// country filter is only part of the query when there's a country to filter by.
+function searchQuery(withCountry: boolean) {
+  return `
+query ($search: String, $type: MediaType${withCountry ? ", $country: CountryCode" : ""}) {
   Page(perPage: 30) {
-    media(search: $search, type: $type, countryOfOrigin: $country, isAdult: false, sort: [SEARCH_MATCH, POPULARITY_DESC]) {
+    media(search: $search, type: $type,${withCountry ? " countryOfOrigin: $country," : ""} isAdult: false, sort: [SEARCH_MATCH, POPULARITY_DESC]) {
       ${MEDIA_FIELDS}
     }
   }
 }`;
+}
 
 // Anime, manga and manhwa all come from AniList. Manhwa are Korean comics,
-// which AniList files under manga, so each tab filters by country.
+// which AniList files under manga, so the Manhwa tab asks for Korean titles
+// only. The Manga tab gets everything; Korean results come back typed as
+// manhwa so the page can point to the Manhwa tab.
 async function searchAniList(query: string, type: "anime" | "manga" | "manhwa") {
   const kind = type === "anime" ? "anime" : "manga";
-  const data = await aniListQuery<{ Page: { media: AniListMedia[] } }>(SEARCH_QUERY, {
-    search: query,
-    type: kind === "anime" ? "ANIME" : "MANGA",
-    country: type === "manhwa" ? "KR" : null,
-  });
-  return data.Page.media
-    .map((m) => aniListToMedia(m, kind))
-    .filter((r) => r.type === type)
-    .slice(0, 24);
+  const variables: Record<string, string> = { search: query, type: kind === "anime" ? "ANIME" : "MANGA" };
+  if (type === "manhwa") variables.country = "KR";
+  // A search can't wait a minute for the rate limit; fail fast and let the page retry.
+  const data = await aniListQuery<{ Page: { media: AniListMedia[] } }>(
+    searchQuery(type === "manhwa"),
+    variables,
+    { attempts: 2, maxWaitSeconds: 5 },
+  );
+  return data.Page.media.map((m) => aniListToMedia(m, kind)).slice(0, 24);
 }
 
 // Movies and TV go through our own /api/tmdb route; see src/lib/tmdb.ts.

@@ -99,16 +99,24 @@ export function aniListToMedia(m: AniListMedia, kind: "anime" | "manga"): MediaR
 }
 
 // Runs an AniList GraphQL query, waiting and retrying if rate limited.
-export async function aniListQuery<T>(query: string, variables: object, attempts = 4): Promise<T> {
+// Gives up (with status 429) if AniList asks for a longer wait than maxWaitSeconds.
+export async function aniListQuery<T>(
+  query: string,
+  variables: object,
+  { attempts = 4, maxWaitSeconds = Infinity }: { attempts?: number; maxWaitSeconds?: number } = {},
+): Promise<T> {
   const res = await fetch("https://graphql.anilist.co", {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify({ query, variables }),
   });
-  if (res.status === 429 && attempts > 1) {
+  if (res.status === 429) {
     const wait = Number(res.headers.get("Retry-After")) || 30;
-    await new Promise((r) => setTimeout(r, wait * 1000));
-    return aniListQuery(query, variables, attempts - 1);
+    if (attempts > 1 && wait <= maxWaitSeconds) {
+      await new Promise((r) => setTimeout(r, wait * 1000));
+      return aniListQuery(query, variables, { attempts: attempts - 1, maxWaitSeconds });
+    }
+    throw Object.assign(new Error("AniList rate limit"), { status: 429, retryAfter: wait });
   }
   const json = await res.json().catch(() => ({}));
   if (!res.ok || json.errors) {
