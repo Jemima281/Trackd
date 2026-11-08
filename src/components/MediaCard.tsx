@@ -19,7 +19,7 @@ export default function MediaCard({
   const [broken, setBroken] = useState(false);
 
   return (
-    <button onClick={onClick} className="group flex flex-col gap-2 text-left">
+    <button onClick={onClick} className="group flex w-full min-w-0 flex-col gap-2 text-left">
       <div
         className="relative aspect-[2/3] w-full overflow-hidden rounded-xl border border-white/10 bg-white/5 transition group-hover:border-amber-400/60"
       >

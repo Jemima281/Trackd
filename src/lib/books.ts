@@ -1,6 +1,7 @@
 // Book search via Open Library (free, no key, allows browser requests).
 // XP comes from pages: about 1.2 minutes per page at an average reading pace.
 
+import { normalizeGenres } from "@/lib/genres";
 import type { MediaResult } from "@/lib/search";
 
 export const MINUTES_PER_PAGE = 1.2;
@@ -48,7 +49,7 @@ export function fromOpenLibrary(docs: OpenLibraryDoc[]): MediaResult[] {
         details: pages ? `${pages} pages` : "Book",
         totalUnits: pages && pages > 0 ? Math.min(pages, 20000) : null,
         unitMinutes: MINUTES_PER_PAGE,
-        genres: genresFrom(d.subject),
+        genres: normalizeGenres(genresFrom(d.subject)),
       };
     });
 }

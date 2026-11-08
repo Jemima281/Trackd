@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 // Shown on phones that haven't installed Shuin to the home screen yet,
@@ -79,9 +80,16 @@ function Key({ children }: { children: React.ReactNode }) {
   );
 }
 
+// The banner covers the bottom of the screen (pagers, save bars, forms), so
+// it only pops up by itself on the home page. Asking for it from the
+// profile page ("Install the app") shows it anywhere.
+const AUTO_PAGES = ["/"];
+
 export default function InstallPrompt() {
+  const pathname = usePathname();
   const [platform, setPlatform] = useState<Platform | null>(null);
   const [open, setOpen] = useState(false);
+  const [asked, setAsked] = useState(false);
   const [installEvent, setInstallEvent] = useState<InstallEvent | null>(null);
 
   useEffect(() => {
@@ -98,6 +106,7 @@ export default function InstallPrompt() {
       try {
         localStorage.removeItem(DISMISS_KEY);
       } catch {}
+      setAsked(true);
       setOpen(true);
     };
     window.addEventListener(INSTALLABLE_EVENT, onInstallable);
@@ -125,7 +134,7 @@ export default function InstallPrompt() {
     setInstallEvent(null);
   }
 
-  if (!open) return null;
+  if (!open || (!asked && !AUTO_PAGES.includes(pathname))) return null;
 
   if (!platform) {
     // Opened from the account page on a computer or in the installed app.

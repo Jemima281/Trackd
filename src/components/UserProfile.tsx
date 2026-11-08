@@ -9,6 +9,7 @@ import MediaCard from "@/components/MediaCard";
 import ProfileHeader from "@/components/ProfileHeader";
 import RankOverview from "@/components/RankOverview";
 import { entryToMedia, listEntries, type Entry } from "@/lib/entries";
+import { genreCounts } from "@/lib/genres";
 import { shownName } from "@/lib/profile";
 import { getStats, type XpByType } from "@/lib/stats";
 import {
@@ -113,6 +114,7 @@ export default function UserProfile({ params }: { params: Promise<{ username: st
   const { profile, entries, byType } = data;
   const byKey = new Map(entries.map((e) => [e.media_key, e]));
   const favorites = profile.favorites.map((k) => byKey.get(k)).filter((e): e is Entry => !!e);
+  const topGenres = genreCounts(entries.filter((e) => e.status !== "planning")).slice(0, 3);
   const isMe = user?.id === profile.id;
   const pill =
     "rounded-full px-5 py-2 text-sm font-bold transition disabled:opacity-50";
@@ -174,6 +176,16 @@ export default function UserProfile({ params }: { params: Promise<{ username: st
   return (
     <div className="flex flex-col gap-8 py-8">
       <ProfileHeader profile={profile}>{actions}</ProfileHeader>
+
+      {topGenres.length > 0 && (
+        <div className="-mt-4 flex flex-wrap justify-center gap-2">
+          {topGenres.map((g) => (
+            <span key={g.genre} className="rounded-full border border-white/15 px-3 py-1 text-xs text-white/70">
+              {g.genre}
+            </span>
+          ))}
+        </div>
+      )}
 
       {favorites.length > 0 && (
         <section className="flex flex-col gap-3">

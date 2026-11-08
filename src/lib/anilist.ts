@@ -1,5 +1,6 @@
 // AniList (anime + manga) helpers shared by search and import.
 
+import { normalizeGenres } from "@/lib/genres";
 import type { MediaResult } from "@/lib/search";
 
 export const MANGA_MINUTES_PER_CHAPTER = 5;
@@ -93,7 +94,7 @@ export function aniListToMedia(m: AniListMedia, kind: "anime" | "manga"): MediaR
         : type === "manhwa"
           ? MANHWA_MINUTES_PER_CHAPTER
           : MANGA_MINUTES_PER_CHAPTER,
-    genres: (m.genres ?? []).slice(0, 12),
+    genres: normalizeGenres(m.genres),
   };
 }
 

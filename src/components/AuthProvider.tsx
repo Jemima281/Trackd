@@ -11,8 +11,7 @@ export type Profile = {
   created_at: string;
   display_name: string | null;
   bio: string | null;
-  avatar_emoji: string | null;
-  avatar_color: string | null;
+  avatar_url: string | null;
   banner: string | null;
   favorites: string[];
 };

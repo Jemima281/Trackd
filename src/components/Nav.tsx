@@ -84,8 +84,7 @@ export default function Nav() {
               <Link href="/profile" aria-label="Your profile">
                 <Avatar
                   username={profile?.username ?? user.email ?? "?"}
-                  emoji={profile?.avatar_emoji}
-                  color={profile?.avatar_color}
+                  url={profile?.avatar_url}
                 />
               </Link>
             ) : (

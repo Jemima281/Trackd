@@ -62,7 +62,8 @@ export default function GroupView({ params }: { params: Promise<{ id: string }> 
   }, [reload]);
 
   const loadBoard = useCallback(
-    (period: Period, category: MediaType | null) => getGroupLeaderboard(id, period, category),
+    (period: Period, category: MediaType | null, genre: string | null) =>
+      getGroupLeaderboard(id, period, category, genre),
     [id],
   );
 
@@ -205,7 +206,7 @@ export default function GroupView({ params }: { params: Promise<{ id: string }> 
           ) : (
             addable.map((f) => (
               <div key={f.id} className="flex items-center gap-3">
-                <Avatar username={f.username} emoji={f.avatar_emoji} color={f.avatar_color} />
+                <Avatar username={f.username} url={f.avatar_url} />
                 <span className="min-w-0 flex-1 truncate">{shownName(f)}</span>
                 <button
                   disabled={busy}
@@ -227,7 +228,7 @@ export default function GroupView({ params }: { params: Promise<{ id: string }> 
         {members.map((m) => (
           <div key={m.profile.id} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
             <Link href={`/u/${m.profile.username}`} className="flex min-w-0 flex-1 items-center gap-3">
-              <Avatar username={m.profile.username} emoji={m.profile.avatar_emoji} color={m.profile.avatar_color} />
+              <Avatar username={m.profile.username} url={m.profile.avatar_url} />
               <span className="truncate font-semibold">{shownName(m.profile)}</span>
               {m.profile.id === group.owner && (
                 <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold uppercase text-white/60">

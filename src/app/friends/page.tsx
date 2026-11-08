@@ -48,7 +48,7 @@ function PersonRow({ profile, children }: { profile: Profile; children?: React.R
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
       <Link href={`/u/${profile.username}`} className="flex min-w-0 flex-1 items-center gap-3">
-        <Avatar username={profile.username} emoji={profile.avatar_emoji} color={profile.avatar_color} />
+        <Avatar username={profile.username} url={profile.avatar_url} />
         <div className="min-w-0">
           <p className="truncate font-semibold hover:underline">{shownName(profile)}</p>
           {profile.display_name && <p className="truncate text-xs text-white/40">@{profile.username}</p>}

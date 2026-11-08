@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { CATEGORY, MEDIA_TYPES, type MediaType } from "@/lib/categories";
+import { normalizeGenres } from "@/lib/genres";
 import type { MediaResult } from "@/lib/search";
 
 export type Status = "planning" | "in_progress" | "dropped" | "completed";
@@ -51,7 +52,7 @@ export const STATUS_STYLES: Record<Status, { badge: string; button: string }> = 
 
 // numeric columns can arrive as strings; normalise once here.
 function normalise(e: Entry): Entry {
-  return { ...e, rating: e.rating == null ? null : Number(e.rating), genres: e.genres ?? [] };
+  return { ...e, rating: e.rating == null ? null : Number(e.rating), genres: normalizeGenres(e.genres) };
 }
 
 export function entryToMedia(e: Entry): MediaResult {
@@ -126,7 +127,7 @@ export async function saveEntry(
         total_units: media.totalUnits ?? null,
         unit_minutes: media.unitMinutes ?? null,
         // Keep genres we already have if this source didn't send any.
-        genres: media.genres?.length ? media.genres : (previous?.genres ?? []),
+        genres: normalizeGenres(media.genres?.length ? media.genres : previous?.genres),
         completed_at: completedAt,
         updated_at: new Date().toISOString(),
       },

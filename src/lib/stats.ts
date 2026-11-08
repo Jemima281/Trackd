@@ -27,14 +27,14 @@ export type LeaderboardRow = {
   user_id: string;
   username: string;
   display_name: string | null;
-  avatar_emoji: string | null;
-  avatar_color: string | null;
+  avatar_url: string | null;
   xp: number;
 };
 
 // You and your accepted friends, highest XP first.
-export async function getLeaderboard(period: Period, category: MediaType | null) {
-  const { data, error } = await createClient().rpc("leaderboard", { period, category });
+// Genre rankings are always all-time (the XP history doesn't record genres).
+export async function getLeaderboard(period: Period, category: MediaType | null, genre: string | null = null) {
+  const { data, error } = await createClient().rpc("leaderboard", { period, category, genre });
   if (error) throw error;
   return (data as LeaderboardRow[]).map((r) => ({ ...r, xp: Number(r.xp) }));
 }

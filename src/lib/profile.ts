@@ -3,20 +3,6 @@ import { createClient } from "@/lib/supabase/client";
 
 // Keep these lists in sync with the checks in supabase/migrations/0008_ratings_profiles.sql.
 
-export const AVATAR_COLORS = {
-  amber: "bg-amber-400",
-  orange: "bg-orange-400",
-  red: "bg-red-400",
-  pink: "bg-pink-400",
-  violet: "bg-violet-400",
-  sky: "bg-sky-400",
-  teal: "bg-teal-400",
-  emerald: "bg-emerald-400",
-  slate: "bg-slate-300",
-} as const;
-
-export type AvatarColor = keyof typeof AVATAR_COLORS;
-
 export const BANNERS = {
   sunset: { label: "Sunset", className: "bg-gradient-to-br from-orange-500 via-pink-500 to-purple-700" },
   ocean: { label: "Ocean", className: "bg-gradient-to-br from-cyan-400 via-sky-600 to-indigo-800" },
@@ -30,17 +16,11 @@ export const BANNERS = {
 
 export type Banner = keyof typeof BANNERS;
 
-export const AVATAR_EMOJIS = [
-  "🦊", "🐱", "🐼", "🐸", "🐙", "🦄", "🐉", "👾",
-  "🤖", "👻", "💀", "🔥", "⚡", "🌸", "🍥", "🍜",
-  "🎬", "📺", "📖", "🎮", "⚔️", "🗡️", "🌙", "⭐",
-];
-
 export const MAX_FAVORITES = 4;
 
 export type ProfileEdits = Pick<
   Profile,
-  "display_name" | "bio" | "avatar_emoji" | "avatar_color" | "banner" | "favorites"
+  "display_name" | "bio" | "avatar_url" | "banner" | "favorites"
 >;
 
 export async function updateProfile(userId: string, edits: ProfileEdits) {

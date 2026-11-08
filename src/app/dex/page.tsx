@@ -1,15 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import LoadError, { describeError } from "@/components/LoadError";
 import DexBrowser from "@/components/DexBrowser";
 import LogSheet from "@/components/LogSheet";
 import { entryToMedia, listEntries, type Entry } from "@/lib/entries";
+import { backfillGenres } from "@/lib/genreBackfill";
 import { totals } from "@/lib/xp";
 
+// ?genre=Action opens the Dex filtered to that genre (linked from stats).
 export default function DexPage() {
+  return (
+    <Suspense fallback={<p className="py-24 text-center text-white/50">Loading your Dex…</p>}>
+      <Dex />
+    </Suspense>
+  );
+}
+
+function Dex() {
+  const genreParam = useSearchParams().get("genre") ?? "";
   const { user, loading } = useAuth();
   const [entries, setEntries] = useState<Entry[] | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
@@ -17,9 +29,19 @@ export default function DexPage() {
 
   useEffect(() => {
     if (!user) return;
+    let cancelled = false;
     listEntries(user.id)
-      .then(setEntries)
-      .catch((err) => setFailed(describeError(err)));
+      .then(async (list) => {
+        if (cancelled) return;
+        setEntries(list);
+        // Quietly fill in genres for older entries (once per browser).
+        const filled = await backfillGenres(user.id, list).catch(() => null);
+        if (filled && !cancelled) setEntries(filled);
+      })
+      .catch((err) => !cancelled && setFailed(describeError(err)));
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   if (loading || (user && !entries && !failed)) {
@@ -77,6 +99,8 @@ export default function DexPage() {
       </div>
 
       <DexBrowser
+        key={genreParam}
+        initialGenre={genreParam}
         entries={entries}
         onSelect={setSelected}
         empty={

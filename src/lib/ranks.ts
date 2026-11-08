@@ -35,6 +35,10 @@ export const CATEGORY_SCALE: Record<MediaType, number> = {
   movie: 0.3,
 };
 
+// Genre ranks: every title counts fully towards each of its genres, on a
+// shorter ladder still (one genre is a slice of what you watch and read).
+export const GENRE_SCALE = 0.2;
+
 export type Rank = {
   tier: Tier;
   division: string | null;

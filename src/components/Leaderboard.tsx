@@ -4,13 +4,16 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import Avatar from "@/components/Avatar";
 import { describeError } from "@/components/LoadError";
+import Pager, { paginate } from "@/components/Pager";
 import RankBadge from "@/components/RankBadge";
 import { CATEGORIES, type MediaType } from "@/lib/categories";
+import { COMMON_GENRES } from "@/lib/genres";
 import { shownName } from "@/lib/profile";
 import { CATEGORY_SCALE, rankFor } from "@/lib/ranks";
 import type { LeaderboardRow, Period } from "@/lib/stats";
 
 const MEDALS = ["🥇", "🥈", "🥉"];
+const PAGE_SIZE = 20;
 
 const CATEGORY_FILTERS: { type: MediaType | null; label: string }[] = [
   { type: null, label: "Everything" },
@@ -44,7 +47,7 @@ function Row({
         <span className="w-6 text-center font-black text-white/40">{place}</span>
       )}
       <Link href={`/u/${row.username}`} className="flex min-w-0 flex-1 items-center gap-3">
-        <Avatar username={row.username} emoji={row.avatar_emoji} color={row.avatar_color} />
+        <Avatar username={row.username} url={row.avatar_url} />
         <div className="min-w-0">
           <p className="truncate font-semibold hover:underline">
             {shownName(row)} {isMe && <span className="text-white/40">(you)</span>}
@@ -71,7 +74,7 @@ export default function Leaderboard({
   empty,
 }: {
   title?: string;
-  load: (period: Period, category: MediaType | null) => Promise<LeaderboardRow[]>;
+  load: (period: Period, category: MediaType | null, genre: string | null) => Promise<LeaderboardRow[]>;
   reloadKey?: unknown;
   meId: string;
   rowAction?: (row: LeaderboardRow) => React.ReactNode;
@@ -79,12 +82,15 @@ export default function Leaderboard({
 }) {
   const [period, setPeriod] = useState<Period>("week");
   const [category, setCategory] = useState<MediaType | null>(null);
+  const [genre, setGenre] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
   const [rows, setRows] = useState<LeaderboardRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    load(period, category)
+    // Genre rankings are all-time only.
+    load(genre ? "all" : period, category, genre)
       .then((r) => {
         if (cancelled) return;
         setRows(r);
@@ -94,10 +100,13 @@ export default function Leaderboard({
     return () => {
       cancelled = true;
     };
-  }, [load, period, category, reloadKey]);
+  }, [load, period, category, genre, reloadKey]);
 
-  // Badges show all-time rank (in the chosen category); weekly XP isn't a rank.
-  const scale = period === "all" ? (category ? CATEGORY_SCALE[category] : 1) : null;
+  // Badges show all-time rank (in the chosen category); weekly XP and
+  // genre-only XP aren't ranks.
+  const allTime = period === "all" || genre !== null;
+  const scale = allTime && !genre ? (category ? CATEGORY_SCALE[category] : 1) : null;
+  const { pageItems, pageCount, current } = paginate(rows ?? [], page, PAGE_SIZE);
 
   return (
     <section className="flex flex-col gap-3">
@@ -107,9 +116,13 @@ export default function Leaderboard({
           {(["week", "all"] as const).map((p) => (
             <button
               key={p}
-              onClick={() => setPeriod(p)}
+              onClick={() => {
+                setPeriod(p);
+                if (p === "week") setGenre(null);
+                setPage(1);
+              }}
               className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold transition ${
-                period === p ? "bg-white text-black" : "text-white/60 hover:text-white"
+                (p === "all") === allTime ? "bg-white text-black" : "text-white/60 hover:text-white"
               }`}
             >
               {p === "week" ? "This week" : "All time"}
@@ -121,7 +134,10 @@ export default function Leaderboard({
         {CATEGORY_FILTERS.map((c) => (
           <button
             key={c.label}
-            onClick={() => setCategory(c.type)}
+            onClick={() => {
+              setCategory(c.type);
+              setPage(1);
+            }}
             className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition ${
               category === c.type
                 ? "bg-amber-400 text-black"
@@ -132,9 +148,29 @@ export default function Leaderboard({
           </button>
         ))}
       </div>
-      {period === "week" && (
-        <p className="text-xs text-white/40">XP earned since Monday. Resets every week.</p>
-      )}
+      <select
+        aria-label="Genre"
+        value={genre ?? ""}
+        onChange={(e) => {
+          setGenre(e.target.value || null);
+          setPage(1);
+        }}
+        className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-amber-400 [&>option]:bg-[#15151c]"
+      >
+        <option value="">All genres</option>
+        {COMMON_GENRES.map((g) => (
+          <option key={g} value={g}>
+            {g}
+          </option>
+        ))}
+      </select>
+      <p className="text-xs text-white/40">
+        {genre
+          ? `All-time XP from ${genre} titles.`
+          : period === "week"
+            ? "XP earned since Monday. Resets every week."
+            : "All-time XP."}
+      </p>
 
       {error ? (
         <p className="break-words rounded-xl bg-white/5 px-4 py-3 text-center font-mono text-xs text-red-300/80">
@@ -143,10 +179,10 @@ export default function Leaderboard({
       ) : !rows ? (
         <p className="py-8 text-center text-white/50">Loading…</p>
       ) : (
-        rows.map((row, i) => (
+        pageItems.map((row, i) => (
           <Row
             key={row.user_id}
-            place={i + 1}
+            place={(current - 1) * PAGE_SIZE + i + 1}
             row={row}
             isMe={row.user_id === meId}
             scale={scale}
@@ -155,6 +191,7 @@ export default function Leaderboard({
           />
         ))
       )}
+      <Pager page={current} pageCount={pageCount} onChange={setPage} />
       {empty}
     </section>
   );

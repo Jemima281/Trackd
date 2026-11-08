@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
-import type { Profile } from "@/components/AuthProvider";
+import { useAuth, type Profile } from "@/components/AuthProvider";
 import { BarList, ColumnChart, Heatmap } from "@/components/Charts";
 import LoadError, { describeError } from "@/components/LoadError";
 import MediaCard from "@/components/MediaCard";
@@ -12,7 +12,7 @@ import { CATEGORIES, CATEGORY, isMediaType, type MediaType } from "@/lib/categor
 import { entryToMedia, listEntries, statusLabel, type Entry } from "@/lib/entries";
 import { getProfileByUsername } from "@/lib/friends";
 import { shownName } from "@/lib/profile";
-import { CATEGORY_SCALE, rankFor, TIER_STYLES } from "@/lib/ranks";
+import { CATEGORY_SCALE, GENRE_SCALE, rankFor, TIER_STYLES } from "@/lib/ranks";
 import { formatRating } from "@/lib/rating";
 import {
   compact,
@@ -73,6 +73,7 @@ export default function StatsView({
   const username = decodeURIComponent(rawUsername);
   const category: MediaType | null = isMediaType(rawCategory) ? rawCategory : null;
   const [data, setData] = useState<Loaded>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     let cancelled = false;
@@ -226,15 +227,7 @@ export default function StatsView({
             )}
           </Card>
 
-          <Card title="Top genres">
-            {s.genres.length === 0 ? (
-              <p className="py-2 text-sm text-white/40">
-                Genres show up for things logged from now on.
-              </p>
-            ) : (
-              <BarList data={s.genres} />
-            )}
-          </Card>
+          <GenreRanks genres={s.genres} linkToDex={user?.id === profile.id} />
 
           {showFormats && (
             <Card title="Formats">
@@ -257,7 +250,7 @@ export default function StatsView({
             <Card title="Highest rated">
               <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
                 {s.topRated.map((e) => (
-                  <div key={e.id} className="flex flex-col gap-1">
+                  <div key={e.id} className="flex min-w-0 flex-col gap-1">
                     <MediaCard item={entryToMedia(e)} />
                     <p className="text-xs font-bold text-amber-400">★ {formatRating(e.rating!)}</p>
                   </div>
@@ -287,5 +280,70 @@ export default function StatsView({
         </>
       )}
     </div>
+  );
+}
+
+// Each genre's own rank, from the XP of titles in that genre.
+function GenreRanks({
+  genres,
+  linkToDex,
+}: {
+  genres: { genre: string; count: number; xp: number }[];
+  linkToDex: boolean;
+}) {
+  const [showAll, setShowAll] = useState(false);
+  const shown = showAll ? genres : genres.slice(0, 8);
+  const max = Math.max(1, ...genres.map((g) => g.xp));
+  return (
+    <Card title="Genre ranks" hint={linkToDex ? "tap to see them in your Dex" : undefined}>
+      {genres.length === 0 ? (
+        <p className="py-2 text-sm text-white/40">No genres yet. They fill in as you log things.</p>
+      ) : (
+        <ul className="flex flex-col gap-1">
+          {shown.map((g, i) => {
+            const r = rankFor(g.xp, GENRE_SCALE);
+            const row = (
+              <>
+                <span className="w-5 text-sm font-black text-white/30">{i + 1}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-baseline justify-between gap-2">
+                    <span className="truncate font-semibold">{g.genre}</span>
+                    <span className={`shrink-0 text-xs font-bold ${TIER_STYLES[r.tier].text}`}>{r.name}</span>
+                  </span>
+                  <span className="mt-1 block h-1.5 w-full rounded-full bg-white/[0.06]">
+                    <span
+                      className="block h-1.5 rounded-full bg-amber-400"
+                      style={{ width: `${Math.max(2, (g.xp / max) * 100)}%` }}
+                    />
+                  </span>
+                  <span className="mt-0.5 block text-xs text-white/40">
+                    {g.xp.toLocaleString()} XP · {g.count} {g.count === 1 ? "title" : "titles"}
+                  </span>
+                </span>
+              </>
+            );
+            return (
+              <li key={g.genre}>
+                {linkToDex ? (
+                  <Link
+                    href={`/dex?genre=${encodeURIComponent(g.genre)}`}
+                    className="-mx-2 flex items-center gap-3 rounded-xl px-2 py-1.5 transition hover:bg-white/[0.05]"
+                  >
+                    {row}
+                  </Link>
+                ) : (
+                  <div className="flex items-center gap-3 py-1.5">{row}</div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {genres.length > 8 && (
+        <button onClick={() => setShowAll((v) => !v)} className="self-start text-sm text-amber-400">
+          {showAll ? "Show fewer" : `Show all ${genres.length} genres`}
+        </button>
+      )}
+    </Card>
   );
 }

@@ -6,8 +6,7 @@ export type FeedItem = {
   id: number;
   username: string;
   display_name: string | null;
-  avatar_emoji: string | null;
-  avatar_color: string | null;
+  avatar_url: string | null;
   media_key: string;
   media_type: MediaType;
   title: string;

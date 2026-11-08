@@ -1,7 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import MediaCard from "@/components/MediaCard";
+import Pager, { paginate } from "@/components/Pager";
+import { genreCounts } from "@/lib/genres";
 import { entryToMedia, statusLabel, STATUSES, type Entry, type Status } from "@/lib/entries";
 import { CATEGORIES, type MediaType } from "@/lib/categories";
 
@@ -55,6 +57,8 @@ const RATING_FILTERS = [
   { id: "unrated", label: "Not rated", test: (e: Entry) => e.rating == null },
 ] as const;
 
+const PAGE_SIZE = 24;
+
 const selectClass =
   "min-w-0 flex-1 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-amber-400 [&>option]:bg-[#15151c]";
 
@@ -64,16 +68,34 @@ export default function DexBrowser({
   entries,
   onSelect,
   empty,
+  initialGenre = "",
 }: {
   entries: Entry[];
   onSelect?: (entry: Entry) => void;
   empty: React.ReactNode;
+  initialGenre?: string;
 }) {
   const [type, setType] = useState<MediaType | "all">("all");
   const [status, setStatus] = useState<Status | "all">("all");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("recent");
   const [ratingFilter, setRatingFilter] = useState<(typeof RATING_FILTERS)[number]["id"]>("any");
+  const [genre, setGenre] = useState(initialGenre);
+  const [page, setPage] = useState(1);
+  const topRef = useRef<HTMLDivElement>(null);
+  const genres = useMemo(() => genreCounts(entries), [entries]);
+
+  // Any filter change starts again from page 1.
+  const filter =
+    <T,>(set: (v: T) => void) =>
+    (v: T) => {
+      set(v);
+      setPage(1);
+    };
+  function goToPage(p: number) {
+    setPage(p);
+    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   // Search and rating narrow everything; type and status pills count within that.
   const matching = useMemo(() => {
@@ -82,25 +104,27 @@ export default function DexBrowser({
     return entries.filter(
       (e) =>
         (!q || e.title.toLowerCase().includes(q) || e.subtitle?.toLowerCase().includes(q)) &&
+        (!genre || e.genres.includes(genre)) &&
         rating.test(e),
     );
-  }, [entries, query, ratingFilter]);
+  }, [entries, query, ratingFilter, genre]);
   const ofType = matching.filter((e) => type === "all" || e.media_type === type);
   const shown = ofType
     .filter((e) => status === "all" || e.status === status)
     .sort(SORTS[sort].compare);
-  const filtering = query.trim() !== "" || ratingFilter !== "any";
+  const filtering = query.trim() !== "" || ratingFilter !== "any" || genre !== "";
+  const { pageItems, pageCount, current } = paginate(shown, page, PAGE_SIZE);
   // "Watching" only makes sense as a filter label when one type is picked.
   const labelType: MediaType = type === "all" ? "anime" : type;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div ref={topRef} className="flex scroll-mt-20 flex-col gap-6">
       {entries.length > 0 && (
         <div className="flex flex-col gap-2">
           <input
             type="search"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => filter(setQuery)(e.target.value)}
             placeholder="Search your Dex…"
             className="rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 outline-none transition focus:border-amber-400"
           />
@@ -108,7 +132,7 @@ export default function DexBrowser({
             <select
               aria-label="Sort"
               value={sort}
-              onChange={(e) => setSort(e.target.value as SortKey)}
+              onChange={(e) => filter(setSort)(e.target.value as SortKey)}
               className={selectClass}
             >
               {Object.entries(SORTS).map(([key, s]) => (
@@ -120,7 +144,7 @@ export default function DexBrowser({
             <select
               aria-label="Rating"
               value={ratingFilter}
-              onChange={(e) => setRatingFilter(e.target.value as typeof ratingFilter)}
+              onChange={(e) => filter(setRatingFilter)(e.target.value as typeof ratingFilter)}
               className={selectClass}
             >
               {RATING_FILTERS.map((r) => (
@@ -130,23 +154,38 @@ export default function DexBrowser({
               ))}
             </select>
           </div>
+          {genres.length > 0 && (
+            <select
+              aria-label="Genre"
+              value={genre}
+              onChange={(e) => filter(setGenre)(e.target.value)}
+              className={selectClass}
+            >
+              <option value="">All genres</option>
+              {genres.map((g) => (
+                <option key={g.genre} value={g.genre}>
+                  {g.genre} ({g.count})
+                </option>
+              ))}
+            </select>
+          )}
         </div>
       )}
 
       <div className="-mx-4 -mt-2 flex gap-2 overflow-x-auto px-4">
         {TYPES.map((t) => (
-          <Pill key={t.type} active={type === t.type} onClick={() => setType(t.type)}>
+          <Pill key={t.type} active={type === t.type} onClick={() => filter(setType)(t.type)}>
             {t.label}
           </Pill>
         ))}
       </div>
 
       <div className="-mx-4 -mt-3 flex gap-2 overflow-x-auto px-4">
-        <Pill active={status === "all"} onClick={() => setStatus("all")}>
+        <Pill active={status === "all"} onClick={() => filter(setStatus)("all")}>
           Any status ({ofType.length})
         </Pill>
         {STATUSES.map((s) => (
-          <Pill key={s} active={status === s} onClick={() => setStatus(s)}>
+          <Pill key={s} active={status === s} onClick={() => filter(setStatus)(s)}>
             {type === "all" && s === "in_progress" ? "In progress" : statusLabel(s, labelType)}{" "}
             ({ofType.filter((e) => e.status === s).length})
           </Pill>
@@ -163,6 +202,8 @@ export default function DexBrowser({
               onClick={() => {
                 setQuery("");
                 setRatingFilter("any");
+                setGenre("");
+                setPage(1);
               }}
               className="text-sm text-amber-400 hover:underline"
             >
@@ -171,8 +212,13 @@ export default function DexBrowser({
           )}
         </div>
       ) : (
+        <>
+        <p className="-mt-2 text-xs text-white/40">
+          {shown.length.toLocaleString()} {shown.length === 1 ? "item" : "items"}
+          {pageCount > 1 && ` · page ${current} of ${pageCount}`}
+        </p>
         <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 lg:grid-cols-6">
-          {shown.map((e) => (
+          {pageItems.map((e) => (
             <MediaCard
               key={e.id}
               item={entryToMedia(e)}
@@ -181,6 +227,8 @@ export default function DexBrowser({
             />
           ))}
         </div>
+        <Pager page={current} pageCount={pageCount} onChange={goToPage} />
+        </>
       )}
     </div>
   );

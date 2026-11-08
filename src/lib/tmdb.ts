@@ -2,6 +2,7 @@
 // (TMDB_READ_TOKEN, set in Vercel) never reaches the browser.
 
 import { aniListQuery, aniListToMedia, MEDIA_FIELDS, type AniListMedia } from "@/lib/anilist";
+import { normalizeGenres } from "@/lib/genres";
 import type { MediaResult } from "@/lib/search";
 
 type TmdbBase = {
@@ -43,10 +44,7 @@ function genreIds(item: TmdbBase) {
 }
 
 function genreNames(item: TmdbBase) {
-  return genreIds(item)
-    .map((id) => GENRES[id])
-    .filter(Boolean)
-    .slice(0, 12);
+  return normalizeGenres(genreIds(item).map((id) => GENRES[id]));
 }
 
 // Japanese animation is anime: it lives in the Anime category (via AniList),

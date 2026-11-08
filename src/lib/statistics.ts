@@ -80,10 +80,17 @@ export function summarise(entries: Entry[]) {
   const scores = Array.from({ length: 11 }, (_, i) => ({ label: String(i), value: 0 }));
   for (const e of rated) scores[Math.min(10, Math.floor(e.rating!))].value++;
 
-  const genres = countBy(
-    started.flatMap((e) => e.genres ?? []),
-    (g) => g,
-  ).slice(0, 8);
+  // Per genre: how many titles and how much XP (a title counts towards each of its genres).
+  const byGenre = new Map<string, { count: number; xp: number }>();
+  for (const e of started) {
+    for (const g of e.genres ?? []) {
+      const cur = byGenre.get(g) ?? { count: 0, xp: 0 };
+      byGenre.set(g, { count: cur.count + 1, xp: cur.xp + e.xp });
+    }
+  }
+  const genres = [...byGenre.entries()]
+    .map(([genre, v]) => ({ genre, ...v }))
+    .sort((a, b) => b.xp - a.xp || b.count - a.count);
 
   const decades = countBy(started, (e) => (e.year ? `${Math.floor(e.year / 10) * 10}s` : null)).sort(
     (a, b) => a.label.localeCompare(b.label),

@@ -12,11 +12,16 @@ Every push to `main` goes live on Vercel within about a minute.
 - Search: anime, manga, manhwa (AniList), movies + TV (TMDB), books (Open Library).
   Japanese animation is kept out of Movies/TV so it only counts once, under Anime.
 - Logging: Planning / Watching / Dropped / Completed, 0.0–10.0 rating, progress
-- Dex: search, sort (recent, rating, title, XP, year) and rating filters
+- Dex: search, sort (recent, rating, title, XP, year), rating and genre filters,
+  24 per page
 - XP: 1 per minute spent + 50 for finishing
 - Ranks: Bronze → Legend, overall and per category, with an emblem per tier
-- Profiles: display name, bio, emoji avatar + colour, banner, top 4 favourites
-- Password reset
+- Profiles: display name, bio, profile photo (Supabase Storage `avatars` bucket),
+  banner, top 4 favourites, top genres
+- Genres: a rank per genre on the stats page, genre leaderboards, genre match on
+  head-to-head. Older entries get genres filled in automatically (`/api/genres`).
+- Long lists (Dex, leaderboards, favourites picker) are split into pages
+- Password reset; show/hide password button
 - Statistics (`/u/username/stats/all` or `/stats/<category>`): heatmap, streaks, XP per
   month, statuses, score distribution, genres, decades, highest rated, time sinks
 - Shareable rank card (story-sized image, from the Ranks page)
@@ -44,6 +49,7 @@ Each file in `supabase/migrations/` is pasted into Supabase → SQL Editor
 | 0008_ratings_profiles.sql | removes music, 0.0–10.0 ratings, profile customisation |
 | 0009_progress_caps.sql | limits on progress for ongoing series |
 | 0010_categories_groups_stats.sql | manhwa + books, genres, groups, statistics |
+| 0011_photos_genres.sql | profile photos, genre leaderboards |
 
 ## Settings outside the code
 

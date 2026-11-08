@@ -4,7 +4,7 @@ import { BANNERS, type Banner } from "@/lib/profile";
 
 type HeaderProfile = Pick<
   Profile,
-  "username" | "display_name" | "bio" | "avatar_emoji" | "avatar_color" | "banner"
+  "username" | "display_name" | "bio" | "avatar_url" | "banner"
 >;
 
 // Banner, avatar, names and bio at the top of a profile.
@@ -23,8 +23,7 @@ export default function ProfileHeader({
         <div className="rounded-full ring-4 ring-[#0b0b10]">
           <Avatar
             username={profile.username}
-            emoji={profile.avatar_emoji}
-            color={profile.avatar_color}
+            url={profile.avatar_url}
             size="lg"
           />
         </div>

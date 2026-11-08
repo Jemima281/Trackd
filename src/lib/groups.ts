@@ -78,8 +78,13 @@ export async function previewGroup(code: string) {
   return rows[0] ? { ...rows[0], members: Number(rows[0].members) } : null;
 }
 
-export async function getGroupLeaderboard(id: string, period: Period, category: MediaType | null) {
-  const rows = await call<LeaderboardRow[]>("group_leaderboard", { gid: id, period, category });
+export async function getGroupLeaderboard(
+  id: string,
+  period: Period,
+  category: MediaType | null,
+  genre: string | null = null,
+) {
+  const rows = await call<LeaderboardRow[]>("group_leaderboard", { gid: id, period, category, genre });
   return rows.map((r) => ({ ...r, xp: Number(r.xp) }));
 }
 

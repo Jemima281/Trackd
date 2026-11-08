@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import InstallPrompt from "@/components/InstallPrompt";
@@ -40,7 +41,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <main className="mx-auto w-full max-w-5xl flex-1 px-4 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:pb-8">
             {children}
           </main>
-          <InstallPrompt />
+          {/* Reads the pathname, which some pages only know at request time. */}
+          <Suspense fallback={null}>
+            <InstallPrompt />
+          </Suspense>
         </AuthProvider>
       </body>
     </html>

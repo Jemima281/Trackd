@@ -10,6 +10,7 @@ import RankBadge from "@/components/RankBadge";
 import { entryToMedia, listEntries, type Entry } from "@/lib/entries";
 import { getProfileByUsername } from "@/lib/friends";
 import { CATEGORY_SCALE, rankFor, TIER_STYLES } from "@/lib/ranks";
+import { genreCounts } from "@/lib/genres";
 import { shownName } from "@/lib/profile";
 import { formatRating } from "@/lib/rating";
 import { CATEGORIES } from "@/lib/categories";
@@ -102,6 +103,30 @@ export default function HeadToHead({ params }: { params: Promise<{ username: str
 
   // Their favourites you haven't logged at all — instant recommendations.
   const myKeys = new Set(me.entries.map((e) => e.media_key));
+  // Genre taste: how similar the mix of genres is (cosine similarity of
+  // genre counts), plus the genres you share and the ones only one of you has.
+  const genreMix = (list: Entry[]) => new Map(genreCounts(list.filter((e) => e.status !== "planning")).map((g) => [g.genre, g.count]));
+  const myGenres = genreMix(me.entries);
+  const theirGenres = genreMix(them.entries);
+  const allGenres = new Set([...myGenres.keys(), ...theirGenres.keys()]);
+  let dot = 0;
+  let magA = 0;
+  let magB = 0;
+  for (const g of allGenres) {
+    const a = myGenres.get(g) ?? 0;
+    const b = theirGenres.get(g) ?? 0;
+    dot += a * b;
+    magA += a * a;
+    magB += b * b;
+  }
+  const genreMatch = magA && magB ? Math.round((dot / Math.sqrt(magA * magB)) * 100) : null;
+  const topOf = (m: Map<string, number>) => [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6).map(([g]) => g);
+  const myTop = topOf(myGenres);
+  const theirTop = topOf(theirGenres);
+  const sharedGenres = myTop.filter((g) => theirTop.includes(g)).slice(0, 4);
+  const onlyMine = myTop.filter((g) => !theirGenres.has(g)).slice(0, 3);
+  const onlyTheirs = theirTop.filter((g) => !myGenres.has(g)).slice(0, 3);
+
   const recs = them.entries
     .filter((e) => e.status === "completed" && (e.rating ?? 0) >= 8 && !myKeys.has(e.media_key))
     .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
@@ -121,8 +146,7 @@ export default function HeadToHead({ params }: { params: Promise<{ username: str
     >
       <Avatar
         username={side.profile.username}
-        emoji={side.profile.avatar_emoji}
-        color={side.profile.avatar_color}
+        url={side.profile.avatar_url}
         size="lg"
       />
       <p className="max-w-full truncate font-black">{shownName(side.profile)}</p>
@@ -191,10 +215,11 @@ export default function HeadToHead({ params }: { params: Promise<{ username: str
 
       <section className="flex flex-col gap-3">
         <h2 className="text-xl font-black">Taste check</h2>
-        <div className="grid grid-cols-3 gap-3 text-center">
+        <div className="grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
           {[
             { value: shared.length, label: "both completed" },
             { value: agreement === null ? "–" : `${agreement}%`, label: "rating agreement" },
+            { value: genreMatch === null ? "–" : `${genreMatch}%`, label: "genre match" },
             {
               value:
                 myAvg === null ? "–" : `${myAvg.toFixed(1)}/${theirAvg!.toFixed(1)}`,
@@ -207,6 +232,25 @@ export default function HeadToHead({ params }: { params: Promise<{ username: str
             </div>
           ))}
         </div>
+        {(sharedGenres.length > 0 || onlyMine.length > 0 || onlyTheirs.length > 0) && (
+          <div className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm">
+            {sharedGenres.length > 0 && (
+              <p className="text-white/70">
+                🤝 You both love <strong className="text-white">{sharedGenres.join(", ")}</strong>
+              </p>
+            )}
+            {onlyMine.length > 0 && (
+              <p className="text-white/70">
+                Only you: <strong className="text-amber-400">{onlyMine.join(", ")}</strong>
+              </p>
+            )}
+            {onlyTheirs.length > 0 && (
+              <p className="text-white/70">
+                Only them: <strong className="text-sky-400">{onlyTheirs.join(", ")}</strong>
+              </p>
+            )}
+          </div>
+        )}
         {biggestFight && biggestFight.mine.rating !== biggestFight.theirs.rating && (
           <p className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white/70">
             🥊 Biggest disagreement: <strong>{biggestFight.mine.title}</strong> — you gave it{" "}
@@ -221,7 +265,7 @@ export default function HeadToHead({ params }: { params: Promise<{ username: str
           <h2 className="text-xl font-black">You&apos;ve both completed</h2>
           <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 lg:grid-cols-6">
             {shared.map(({ mine, theirs }) => (
-              <div key={mine.id} className="flex flex-col gap-1">
+              <div key={mine.id} className="flex min-w-0 flex-col gap-1">
                 <MediaCard item={entryToMedia(mine)} />
                 <p className="text-xs">
                   <span className="font-bold text-amber-400">You {mine.rating != null ? formatRating(mine.rating) : "–"}</span>
@@ -241,7 +285,7 @@ export default function HeadToHead({ params }: { params: Promise<{ username: str
           </h2>
           <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 lg:grid-cols-6">
             {recs.map((e) => (
-              <div key={e.id} className="flex flex-col gap-1">
+              <div key={e.id} className="flex min-w-0 flex-col gap-1">
                 <MediaCard item={entryToMedia(e)} />
                 <p className="text-xs font-bold text-sky-400">They gave it ★ {formatRating(e.rating!)}</p>
               </div>

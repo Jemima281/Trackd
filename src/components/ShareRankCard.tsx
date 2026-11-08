@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Profile } from "@/components/AuthProvider";
 import RankBadge from "@/components/RankBadge";
 import { CATEGORIES } from "@/lib/categories";
-import { AVATAR_COLORS, BANNERS, type AvatarColor, type Banner } from "@/lib/profile";
+import { BANNERS, type Banner } from "@/lib/profile";
 import { CATEGORY_SCALE, rankFor } from "@/lib/ranks";
 import type { XpByType } from "@/lib/stats";
 
@@ -15,32 +15,46 @@ const W = 1080;
 const H = 1920;
 const FONT = "'Helvetica Neue', Helvetica, Arial, sans-serif";
 
-// Tailwind colour names used by avatars and banners, as hex for the SVG.
-const HEX: Record<string, string> = {
-  amber: "#fbbf24", orange: "#fb923c", red: "#f87171", pink: "#f472b6", violet: "#a78bfa",
-  sky: "#38bdf8", teal: "#2dd4bf", emerald: "#34d399", slate: "#cbd5e1",
-};
+// Same fallback colours as <Avatar> for people without a photo.
+const FALLBACK = ["#f472b6", "#a78bfa", "#f87171", "#38bdf8", "#34d399", "#fbbf24"];
 const BANNER_HEX: Record<Banner, [string, string]> = {
   sunset: ["#f97316", "#7e22ce"], ocean: ["#22d3ee", "#3730a3"], forest: ["#a3e635", "#134e4a"],
   grape: ["#d946ef", "#312e81"], gold: ["#fde68a", "#9a3412"], crimson: ["#fb7185", "#450a0a"],
   midnight: ["#475569", "#020617"], aurora: ["#6ee7b7", "#7c3aed"],
 };
 
-function avatarColor(p: Pick<Profile, "username" | "avatar_color">) {
-  if (p.avatar_color && p.avatar_color in AVATAR_COLORS) return HEX[p.avatar_color as AvatarColor];
-  const fallback = ["pink", "violet", "red", "sky", "emerald", "amber"];
-  const hash = [...p.username].reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
-  return HEX[fallback[hash % fallback.length]];
+function fallbackColor(username: string) {
+  const hash = [...username].reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
+  return FALLBACK[hash % FALLBACK.length];
+}
+
+// An exported image can't load anything from the web, so the profile photo
+// is fetched and embedded as data. Null if there's no photo or it fails.
+async function photoAsData(url: string | null) {
+  if (!url) return null;
+  try {
+    const blob = await (await fetch(url)).blob();
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
 }
 
 function Card({
   svgRef,
   profile,
+  photo,
   byType,
   hours,
 }: {
   svgRef: React.RefObject<SVGSVGElement | null>;
   profile: Profile;
+  photo: string | null;
   byType: XpByType;
   hours: number;
 }) {
@@ -64,6 +78,9 @@ function Card({
           <stop offset="0.35" stopColor="#14141c" stopOpacity="0" />
           <stop offset="1" stopColor="#14141c" stopOpacity="1" />
         </linearGradient>
+        <clipPath id="card-avatar">
+          <circle cx={W / 2} cy="400" r="92" />
+        </clipPath>
         <radialGradient id="card-glow" cx="0.5" cy="0.5" r="0.5">
           <stop offset="0" stopColor="#fbbf24" stopOpacity="0.22" />
           <stop offset="1" stopColor="#fbbf24" stopOpacity="0" />
@@ -85,10 +102,24 @@ function Card({
 
       {/* Avatar and name */}
       <circle cx={W / 2} cy="400" r="104" fill="#07070b" />
-      <circle cx={W / 2} cy="400" r="92" fill={avatarColor(profile)} />
-      <text x={W / 2} y="434" textAnchor="middle" fontSize="96" fontWeight="900" fill="#000" fontFamily={FONT}>
-        {profile.avatar_emoji || profile.username[0].toUpperCase()}
-      </text>
+      {photo ? (
+        <image
+          href={photo}
+          x={W / 2 - 92}
+          y="308"
+          width="184"
+          height="184"
+          clipPath="url(#card-avatar)"
+          preserveAspectRatio="xMidYMid slice"
+        />
+      ) : (
+        <>
+          <circle cx={W / 2} cy="400" r="92" fill={fallbackColor(profile.username)} />
+          <text x={W / 2} y="434" textAnchor="middle" fontSize="96" fontWeight="900" fill="#000" fontFamily={FONT}>
+            {profile.username[0].toUpperCase()}
+          </text>
+        </>
+      )}
       <text x={W / 2} y="580" textAnchor="middle" fontSize="64" fontWeight="900" fill="#fff" fontFamily={FONT}>
         {name.length > 22 ? `${name.slice(0, 21)}…` : name}
       </text>
@@ -178,11 +209,23 @@ export default function ShareRankCard({
   const [open, setOpen] = useState(false);
   const [png, setPng] = useState<{ blob: Blob; url: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // undefined while loading the photo, then its data (or null).
+  const [photo, setPhoto] = useState<string | null | undefined>(undefined);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  // Draw the PNG once the hidden SVG has rendered.
   useEffect(() => {
     if (!open) return;
+    let cancelled = false;
+    photoAsData(profile.avatar_url).then((data) => !cancelled && setPhoto(data));
+    return () => {
+      cancelled = true;
+      setPhoto(undefined);
+    };
+  }, [open, profile.avatar_url]);
+
+  // Draw the PNG once the photo is ready and the hidden SVG has rendered.
+  useEffect(() => {
+    if (!open || photo === undefined) return;
     let cancelled = false;
     let url: string | null = null;
     const timer = setTimeout(async () => {
@@ -202,7 +245,7 @@ export default function ShareRankCard({
       setPng(null);
       setError(null);
     };
-  }, [open]);
+  }, [open, photo]);
 
   const file = png ? new File([png.blob], `shuin-${profile.username}.png`, { type: "image/png" }) : null;
   const canShareFile = !!file && typeof navigator !== "undefined" && !!navigator.canShare?.({ files: [file] });
@@ -238,7 +281,9 @@ export default function ShareRankCard({
           >
             {/* Drawn off-screen, then converted to an image. */}
             <div aria-hidden className="pointer-events-none fixed -left-[9999px] top-0">
-              <Card svgRef={svgRef} profile={profile} byType={byType} hours={hours} />
+              {photo !== undefined && (
+                <Card svgRef={svgRef} profile={profile} photo={photo} byType={byType} hours={hours} />
+              )}
             </div>
 
             {png ? (

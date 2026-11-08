@@ -14,7 +14,7 @@ function FeedRow({ item }: { item: FeedItem }) {
   return (
     <div className="flex gap-3 border-b border-white/5 py-4 last:border-0">
       <Link href={`/u/${item.username}`} className="shrink-0">
-        <Avatar username={item.username} emoji={item.avatar_emoji} color={item.avatar_color} />
+        <Avatar username={item.username} url={item.avatar_url} />
       </Link>
       <div className="min-w-0 flex-1">
         <p className="text-sm leading-snug text-white/80">
